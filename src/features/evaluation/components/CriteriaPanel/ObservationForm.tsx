@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import type { Criterion } from '../../types/evaluation.types';
 
 interface Props {
@@ -14,28 +13,16 @@ export function ObservationForm({
   onObservationChange,
   onPageRefChange,
 }: Props) {
-  const [obs, setObs] = useState(criterion.observation);
-  const [pageRef, setPageRef] = useState(criterion.pageReference?.toString() ?? '');
-
-  useEffect(() => {
-    setObs(criterion.observation);
-    setPageRef(criterion.pageReference?.toString() ?? '');
-  }, [criterion.id, criterion.observation, criterion.pageReference]);
-
   const handleObsChange = (val: string) => {
-    setObs(val);
     onObservationChange(criterion.id, val);
   };
 
   const handlePageRefChange = (val: string) => {
-    setPageRef(val);
     const num = parseInt(val);
     onPageRefChange(criterion.id, isNaN(num) ? undefined : num);
   };
 
   const useCurrentPage = () => {
-    const p = currentPdfPage.toString();
-    setPageRef(p);
     onPageRefChange(criterion.id, currentPdfPage);
   };
 
@@ -46,7 +33,7 @@ export function ObservationForm({
         <textarea
           className="obs-form__textarea"
           placeholder="Describe el problema o hallazgo encontrado..."
-          value={obs}
+          value={criterion.observation}
           onChange={(e) => handleObsChange(e.target.value)}
           rows={3}
         />
@@ -58,7 +45,7 @@ export function ObservationForm({
             type="number"
             className="obs-form__page-input"
             placeholder="Pág."
-            value={pageRef}
+            value={criterion.pageReference?.toString() ?? ''}
             onChange={(e) => handlePageRefChange(e.target.value)}
             min={1}
           />

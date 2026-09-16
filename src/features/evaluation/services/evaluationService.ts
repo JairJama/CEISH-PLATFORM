@@ -89,7 +89,8 @@ const MOCK_SESSION: EvaluationSession = {
 };
 
 export const evaluationService = {
-  async getSession(_id: string): Promise<EvaluationSession> {
+  async getSession(id: string): Promise<EvaluationSession> {
+    void id;
     await new Promise((r) => setTimeout(r, 300));
     return structuredClone(MOCK_SESSION);
   },

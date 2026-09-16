@@ -14,14 +14,12 @@ export function SubmissionPage() {
   const [loading, setLoading] = useState(true);
   const [modalMode, setModalMode] = useState<ModalMode>(null);
 
-  const load = async () => {
-    setLoading(true);
-    const sub = await submissionsService.getForStudent(currentUser.id);
-    setSubmission(sub);
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); }, [currentUser.id]);
+  useEffect(() => {
+    void submissionsService.getForStudent(currentUser.id).then((sub) => {
+      setSubmission(sub);
+      setLoading(false);
+    });
+  }, [currentUser.id]);
 
   const handleConfirm = async (file: File, comment: string) => {
     try {

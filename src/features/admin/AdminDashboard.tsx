@@ -21,8 +21,7 @@ export function AdminDashboard() {
   const [rows, setRows] = useState<EvaluatorRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    setLoading(true);
+  const getRows = async (): Promise<EvaluatorRow[]> => {
     const [users, assignments, allSubs]: [User[], Assignment[], StudentSubmission[]] = await Promise.all([
       platformService.getUsers(),
       platformService.getAssignments(),
@@ -37,11 +36,15 @@ export function AdminDashboard() {
       }));
       return { evaluator: ev, students };
     });
-    setRows(result);
-    setLoading(false);
+    return result;
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    void getRows().then((result) => {
+      setRows(result);
+      setLoading(false);
+    });
+  }, []);
 
   return (
     <div className="page">

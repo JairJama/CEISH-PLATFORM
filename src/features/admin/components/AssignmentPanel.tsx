@@ -30,8 +30,13 @@ export function AssignmentPanel() {
   };
 
   useEffect(() => {
-    platformService.getUsers().then(setUsers);
-    load();
+    void Promise.all([
+      platformService.getUsers(),
+      platformService.getAssignments(),
+    ]).then(([allUsers, allAssignments]) => {
+      setUsers(allUsers);
+      setAssignments(allAssignments);
+    });
   }, []);
 
   const isAssigned = (evaluatorId: string, studentId: string) =>
