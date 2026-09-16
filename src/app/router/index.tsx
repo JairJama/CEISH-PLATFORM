@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { EvaluationPage } from '../../features/evaluation/EvaluationPage';
 import { LoginPage } from '../../features/auth/LoginPage';
+import { RegistrationPage } from '../../features/auth/RegistrationPage';
 import { AppShell } from '../../shared/components/AppShell';
 import { SubmissionPage } from '../../features/student/SubmissionPage';
 import { EvaluatorDashboard } from '../../features/evaluator/EvaluatorDashboard';
@@ -35,6 +36,7 @@ export function AppRouter() {
       <Routes>
         {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/registro" element={<RegistrationPage />} />
 
         {/* Full-screen evaluation routes (existing + review) */}
         <Route path="/evaluacion" element={<RequireRole role="evaluator"><EvaluationPage /></RequireRole>} />

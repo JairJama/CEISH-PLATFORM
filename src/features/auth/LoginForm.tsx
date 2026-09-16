@@ -1,5 +1,6 @@
 // src/features/auth/components/LoginForm.tsx
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './LoginForm.css';
 
 import { colors, typography } from '../../shared/components/common/colors';
@@ -174,6 +175,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
 
       {/* Links */}
       <div className="login-form__links">
+        <Link
+          to="/registro"
+          className="login-form__link"
+          style={{ color: colors.primary[500], border: `1px solid ${colors.border}` }}
+        >
+          Solicitar registro
+        </Link>
         <a
           href="#forgot"
           className="login-form__link"

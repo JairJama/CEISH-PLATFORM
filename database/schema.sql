@@ -30,6 +30,26 @@ CREATE TABLE users (
 CREATE INDEX idx_users_role ON users(role_id);
 
 -- ----------------------------------------------------------------------------
+-- registration_requests
+-- Solicitudes públicas de acceso. No crean una sesión ni una cuenta activa
+-- hasta que el equipo administrador las revise.
+-- ----------------------------------------------------------------------------
+CREATE TABLE registration_requests (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name            VARCHAR(120) NOT NULL,
+  email           VARCHAR(255) NOT NULL UNIQUE,
+  password_hash   VARCHAR(255) NOT NULL,
+  researcher_type VARCHAR(20) NOT NULL
+                    CHECK (researcher_type IN ('internal', 'external')),
+  affiliation     VARCHAR(180) NOT NULL DEFAULT '',
+  status          VARCHAR(20) NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending', 'approved', 'rejected')),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_registration_requests_status ON registration_requests(status);
+
+-- ----------------------------------------------------------------------------
 -- submissions  (entrega de documentos)
 -- ----------------------------------------------------------------------------
 CREATE TABLE submissions (

@@ -20,6 +20,7 @@ import {
 } from './queries/assignments';
 import { getReviewBySubmission, getOrCreateReview, saveReview } from './queries/reviews';
 import { loginUser } from './queries/auth';
+import { createRegistrationRequest, type ResearcherType } from './queries/registrationRequests';
 import type { SaveReviewInput } from './queries/reviews';
 import { uploadPdf, getPresignedUrl, getObjectStream } from '../lib/minio';
 import { clearSession, getSession, setSession, type SessionUser } from './session';
@@ -116,6 +117,42 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
     }
     setSession(res, { id: user.id, role: user.role as SessionUser['role'] });
     sendJson(res, 200, { user });
+    return true;
+  }
+  if (path === '/api/auth/register' && method === 'POST') {
+    const b = await readJsonBody(req);
+    const name = String(b.name ?? '').trim();
+    const email = String(b.email ?? '').trim().toLowerCase();
+    const password = String(b.password ?? '');
+    const researcherType = b.researcherType;
+    const affiliation = String(b.affiliation ?? '').trim();
+    const validType = researcherType === 'internal' || researcherType === 'external';
+
+    if (!name || !email || !password || !validType || (researcherType === 'external' && !affiliation)) {
+      sendJson(res, 400, { error: 'Completa todos los campos requeridos' });
+      return true;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      sendJson(res, 400, { error: 'Ingresa un correo válido' });
+      return true;
+    }
+    if (password.length < 8) {
+      sendJson(res, 400, { error: 'La contraseña debe tener al menos 8 caracteres' });
+      return true;
+    }
+
+    const created = await createRegistrationRequest({
+      name,
+      email,
+      password,
+      researcherType: researcherType as ResearcherType,
+      affiliation: researcherType === 'internal' ? '' : affiliation,
+    });
+    if (!created) {
+      sendJson(res, 409, { error: 'Ya existe una cuenta o una solicitud con este correo' });
+      return true;
+    }
+    sendJson(res, 201, { message: 'Solicitud enviada. Te notificaremos cuando sea revisada.' });
     return true;
   }
   if (path === '/api/auth/logout' && method === 'POST') {
