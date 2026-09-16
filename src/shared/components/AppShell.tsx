@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { logout as logoutSession } from '../../services/authService';
 import { useAuthStore } from '../../store/authStore';
 import { cn } from '../../utils/cn';
 import '../styles/platform.css';
@@ -66,14 +67,14 @@ export function AppShell() {
   const { currentUser, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logoutSession();
     logout();
     navigate('/login', { replace: true });
   };
 
   if (!currentUser) {
-    navigate('/login', { replace: true });
-    return null;
+    return <Navigate to="/login" replace />;
   }
 
   const navItems = ROLE_NAV[currentUser.role];

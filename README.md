@@ -241,7 +241,7 @@ progreso) que incluye criterios evaluados y una anotación sobre el PDF.
 - [x] UI conectada a PostgreSQL (sin datos mock)
 - [x] Almacenamiento de PDF en MinIO (subida, validación y URLs firmadas)
 - [x] Visualización del PDF del estudiante dentro de la revisión del evaluador
-- [ ] Autenticación real con JWT
+- [x] Sesión autenticada mediante cookie HttpOnly firmada y contraseñas scrypt
 - [ ] Notificaciones de estado por correo
 - [ ] Panel de estadísticas para administrador
 

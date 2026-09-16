@@ -46,7 +46,7 @@ La traducción teacher/evaluator se realiza principalmente en src/shared/service
 
 ### Diseñado o pendiente
 
-- JWT o sesiones seguras.
+- Sesión HTTP firmada con cookie HttpOnly y contraseñas scrypt.
 - Autorización server-side por rol y por relación evaluador-estudiante.
 - Contraseñas con bcrypt.
 - Historial de auditoría.
@@ -791,4 +791,3 @@ CEISH Platform conecta tres actores alrededor de una entrega académica:
         -> revisa el PDF por etapas y emite el resultado
 
 Los metadatos y la evaluación están en PostgreSQL; el archivo PDF está en MinIO. La UI actual es un prototipo institucional funcional. Antes de producción hay que implementar autenticación segura, autorización server-side, validación estricta de transiciones, limpieza de archivos y auditoría.
-

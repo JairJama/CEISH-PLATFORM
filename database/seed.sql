@@ -13,17 +13,17 @@ INSERT INTO roles (id, name) VALUES
   ('33333333-3333-3333-3333-333333333333', 'admin');
 
 -- ----------------------------------------------------------------------------
--- users  (contraseña en texto plano: solo para el prototipo)
+-- users  (todas las cuentas demo usan demo123; hash scrypt)
 -- ----------------------------------------------------------------------------
 INSERT INTO users (id, name, email, password, role_id) VALUES
   -- admin demo
-  ('a0000000-0000-0000-0000-000000000001', 'Admin Demo',   'admin@ceish.edu',   'demo123', '33333333-3333-3333-3333-333333333333'),
+  ('a0000000-0000-0000-0000-000000000001', 'Admin Demo',   'admin@ceish.edu',   'scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '33333333-3333-3333-3333-333333333333'),
   -- profesor demo
-  ('b0000000-0000-0000-0000-000000000001', 'Profesor Demo','profesor@ceish.edu','demo123', '22222222-2222-2222-2222-222222222222'),
+  ('b0000000-0000-0000-0000-000000000001', 'Profesor Demo','profesor@ceish.edu','scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '22222222-2222-2222-2222-222222222222'),
   -- estudiantes demo
-  ('c0000000-0000-0000-0000-000000000001', 'Juan Pérez',   'juan@ceish.edu',    'demo123', '11111111-1111-1111-1111-111111111111'),
-  ('c0000000-0000-0000-0000-000000000002', 'María López',  'maria@ceish.edu',   'demo123', '11111111-1111-1111-1111-111111111111'),
-  ('c0000000-0000-0000-0000-000000000003', 'Carlos Ruiz',  'carlos@ceish.edu',  'demo123', '11111111-1111-1111-1111-111111111111');
+  ('c0000000-0000-0000-0000-000000000001', 'Juan Pérez',   'juan@ceish.edu',    'scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '11111111-1111-1111-1111-111111111111'),
+  ('c0000000-0000-0000-0000-000000000002', 'María López',  'maria@ceish.edu',   'scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '11111111-1111-1111-1111-111111111111'),
+  ('c0000000-0000-0000-0000-000000000003', 'Carlos Ruiz',  'carlos@ceish.edu',  'scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '11111111-1111-1111-1111-111111111111');
 
 -- ----------------------------------------------------------------------------
 -- assignments  (el profesor demo tiene 3 estudiantes asignados)

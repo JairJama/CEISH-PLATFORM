@@ -46,3 +46,13 @@ export async function login(
     };
   }
 }
+
+export async function getSession(): Promise<AuthUser | null> {
+  const res = await fetch('/api/auth/session');
+  if (!res.ok) return null;
+  return res.json() as Promise<AuthUser>;
+}
+
+export async function logout(): Promise<void> {
+  await fetch('/api/auth/logout', { method: 'POST' });
+}
