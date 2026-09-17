@@ -26,10 +26,22 @@ export type QualificationStatus =
   | 'cancelled'
   | 'expired';
 
+export interface ResearchDocument {
+  id: string;
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+}
+
 export interface StudentSubmission {
   id: string;
   studentId: string;
+  researchCode: string;
+  title: string;
   documentName: string;
+  documents: ResearchDocument[];
+  annex11Status?: string;
   comment: string;
   status: SubmissionStatus;
   submittedAt: string;
