@@ -228,6 +228,18 @@
 .annex-editor summary { padding: 10px 13px; color: var(--c-primary); font-size: 11px; font-weight: 700; cursor: pointer; }
 .annex-editor[open] summary { border-bottom: 1px solid var(--c-border); }
 .annex-form--compact { border: 0; border-radius: 0 0 var(--r-md) var(--r-md); background: var(--c-surface-2); }
+.annex-document-actions { display: flex; flex-direction: column; gap: 9px; width: 100%; padding: 12px 14px; border: 1px solid var(--c-primary-border); border-radius: var(--r-md); background: var(--c-primary-light); }
+.annex-document-actions > div { display: flex; flex-direction: column; gap: 2px; }
+.annex-document-actions strong { color: var(--c-text-2); font-size: 12px; }
+.annex-document-actions > div span { color: var(--c-text-muted); font-size: 11px; }
+.annex-document-actions ul { display: flex; flex-direction: column; gap: 7px; list-style: none; }
+.annex-document-actions li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 7px; border-top: 1px solid var(--c-primary-border); color: var(--c-text-2); font-size: 12px; }
+.annex-document-actions li div { display: flex; flex-wrap: wrap; gap: 6px; }
+.annex-document-actions .eval-btn { padding: 5px 9px; }
+.annex-preview { width: 100%; border: 1px solid var(--c-border); border-radius: var(--r-md); background: var(--c-surface); }
+.annex-preview summary { padding: 10px 13px; color: var(--c-text-2); font-size: 11px; font-weight: 700; cursor: pointer; }
+.annex-preview > div { display: flex; flex-direction: column; gap: 5px; padding: 0 13px 12px; color: var(--c-text-2); font-size: 12px; line-height: 1.45; }
+.annex-preview__note { color: var(--c-text-muted); font-size: 11px; }
 
 @media (max-width: 760px) {
   .stratification-card__form { align-items: stretch; flex-direction: column; }

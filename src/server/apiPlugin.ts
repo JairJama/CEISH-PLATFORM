@@ -34,6 +34,10 @@ import {
   listQualificationTasks, reviewQualification, submitCorrection,
 } from './queries/qualifications';
 import { cancelResearch, listAdminResearch, reassignStratifier } from './queries/adminResearch';
+import {
+  getAnnexDocument, regenerateAssignmentAnnexDocument,
+  regenerateSubmissionAnnexDocument,
+} from './queries/annexes';
 import type { SaveReviewInput } from './queries/reviews';
 import { uploadDocument, getPresignedUrl, getObjectStream } from '../lib/minio';
 import { clearSession, getSession, setSession, type SessionUser } from './session';
@@ -415,6 +419,7 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       documents,
       comment: String(b.comment ?? ''),
     });
+    await regenerateSubmissionAnnexDocument(created.id, 11);
     sendJson(res, 201, created);
     return true;
   }
@@ -456,6 +461,7 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       comment: b.comment as string | undefined,
       documents,
     });
+    if (updated) await regenerateSubmissionAnnexDocument(updated.id, 11);
     sendJson(res, updated ? 200 : 404, updated ?? { error: 'Entrega no encontrada' });
     return true;
   }
@@ -529,6 +535,7 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
         .map(([key, value]) => [key, String(value ?? '').trim()]),
     );
     const updated = await updateAnnex11(annex11Match[1], session.id, sanitized);
+    if (updated) await regenerateAssignmentAnnexDocument(annex11Match[1], 11);
     sendJson(res, updated ? 200 : 404, updated
       ? { message: 'Anexo 11 actualizado' }
       : { error: 'Anexo 11 no encontrado' });
@@ -574,6 +581,7 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       sendJson(res, 409, { error: 'Primero debes completar el Anexo 23 sin conflicto de interés' });
       return true;
     }
+    await regenerateAssignmentAnnexDocument(stratificationMatch[1], 27);
     sendJson(res, 200, { result, message: 'Anexo 27 completado: investigación clasificada sin riesgo' });
     return true;
   }
@@ -606,7 +614,33 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       : result === 'reassigned'
         ? 'Conflicto registrado. La investigación fue reasignada a otro miembro CEISH.'
         : 'Conflicto registrado, pero no hay otro miembro CEISH disponible.';
+    await regenerateAssignmentAnnexDocument(stratificationConflictMatch[1], 23);
     sendJson(res, 200, { result, message });
+    return true;
+  }
+
+  const annexDocumentMatch = path.match(/^\/api\/annexes\/([^/]+)\/document$/);
+  if (annexDocumentMatch && method === 'GET') {
+    const session = requireSession(req, res);
+    if (!session) return true;
+    const document = await getAnnexDocument(annexDocumentMatch[1]);
+    if (!document || !document.document_path) {
+      sendJson(res, 404, { error: 'El documento Word del anexo aún no está disponible' });
+      return true;
+    }
+    const isAssignedMember = session.role === 'evaluator'
+      && (session.id === document.completed_by || session.id === document.assignment_member_id);
+    const isResearcherWithExemption = session.role === 'student'
+      && session.id === document.researcher_id
+      && document.annex_number === 11;
+    if (session.role !== 'admin' && !isAssignedMember && !isResearcherWithExemption) {
+      sendJson(res, 403, { error: 'No tienes permiso para consultar este anexo' });
+      return true;
+    }
+    sendJson(res, 200, {
+      url: await getPresignedUrl(document.document_path),
+      documentName: document.document_name,
+    });
     return true;
   }
 

@@ -91,6 +91,75 @@ function Annex11Editor({ task, onSaved }: { task: StratificationTask; onSaved: (
   );
 }
 
+function AnnexDocumentActions({ task }: { task: StratificationTask }) {
+  const [message, setMessage] = useState<string | null>(null);
+  const documents = [
+    { id: task.annex_11_id, label: 'Anexo 11' },
+    { id: task.annex_23_id, label: 'Anexo 23' },
+    { id: task.annex_27_status === 'completed' ? task.annex_27_id : null, label: 'Anexo 27' },
+  ].filter((document): document is { id: string; label: string } => Boolean(document.id));
+
+  const openDocument = async (id: string, download: boolean) => {
+    try {
+      const document = await workflowService.getAnnexDocumentUrl(id);
+      if (download) {
+        const link = window.document.createElement('a');
+        link.href = document.url;
+        link.download = document.documentName;
+        link.rel = 'noopener';
+        link.click();
+      } else {
+        window.open(document.url, '_blank', 'noopener');
+      }
+      setMessage(null);
+    } catch (cause) {
+      setMessage((cause as Error).message);
+    }
+  };
+
+  if (!documents.length) return null;
+  return (
+    <section className="annex-document-actions" aria-label="Documentos Word generados">
+      <div>
+        <strong>Documentos Word generados</strong>
+        <span>Se actualizan al guardar los datos del anexo.</span>
+      </div>
+      <ul>
+        {documents.map((document) => (
+          <li key={document.id}>
+            <span>{document.label}</span>
+            <div>
+              <button className="eval-btn eval-btn--outline" type="button" onClick={() => openDocument(document.id, false)}>Abrir Word</button>
+              <button className="eval-btn eval-btn--primary" type="button" onClick={() => openDocument(document.id, true)}>Descargar</button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      {message && <p className="stratification-card__message" role="alert">{message}</p>}
+    </section>
+  );
+}
+
+function AnnexPreview({ task }: { task: StratificationTask }) {
+  const annex27 = task.annex_27_data;
+  return (
+    <details className="annex-preview">
+      <summary>Vista previa del contenido que se entrega en Word</summary>
+      <div>
+        <p><strong>{task.research_code}</strong> · {task.title}</p>
+        <p>Investigador: {task.researcher_name}</p>
+        {task.annex_23_id && <p>Anexo 23: declaración de conflicto registrada.</p>}
+        {task.annex_27_status === 'completed' && (
+          <p>
+            Anexo 27: {annex27?.researchType || 'Investigación sin riesgo'} · resultado: <strong>Sin riesgo</strong>.
+          </p>
+        )}
+        <p className="annex-preview__note">Usa los formularios de los anexos para editar los datos; al guardar se genera una nueva versión del Word.</p>
+      </div>
+    </details>
+  );
+}
+
 function ConflictForm({ task, onSaved }: { task: StratificationTask; onSaved: () => Promise<void> }) {
   const [placeDate, setPlaceDate] = useState(`Manta, ${new Date().toLocaleDateString('es-EC')}`);
   const [decision, setDecision] = useState<'yes' | 'no' | ''>('');
@@ -321,11 +390,19 @@ function StratificationCard({ task, onSaved }: { task: StratificationTask; onSav
 
       <ResearchDocuments task={task} />
       <Annex11Editor task={task} onSaved={onSaved} />
+      <AnnexPreview task={task} />
+      <AnnexDocumentActions task={task} />
 
       {classified ? (
-        <div className="stratification-card__result">
-          Anexo 27 completado. Riesgo definido: <strong>Investigación sin riesgo</strong>.
-        </div>
+        <>
+          <div className="stratification-card__result">
+            Anexo 27 completado. Riesgo definido: <strong>Investigación sin riesgo</strong>.
+          </div>
+          <details className="annex-editor">
+            <summary>Editar Anexo 27 y regenerar Word</summary>
+            <Annex27Form task={task} onSaved={onSaved} />
+          </details>
+        </>
       ) : cancelled ? (
         <div className="stratification-card__result">Esta investigación fue cancelada por administración.</div>
       ) : task.has_conflict === null ? (

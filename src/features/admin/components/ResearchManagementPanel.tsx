@@ -59,6 +59,24 @@ function ResearchRow({
     }
   };
 
+  const openAnnex = async (annexId: string, download: boolean) => {
+    setMessage(null);
+    try {
+      const document = await workflowService.getAnnexDocumentUrl(annexId);
+      if (download) {
+        const link = window.document.createElement('a');
+        link.href = document.url;
+        link.download = document.documentName;
+        link.rel = 'noopener';
+        link.click();
+      } else {
+        window.open(document.url, '_blank', 'noopener');
+      }
+    } catch (cause) {
+      setMessage((cause as Error).message);
+    }
+  };
+
   return (
     <article className="research-management-card">
       <div className="research-management-card__header">
@@ -111,6 +129,26 @@ function ResearchRow({
           </button>
         )}
       </div>
+      {research.annexes.length > 0 && (
+        <section className="research-management-card__annexes" aria-label="Anexos generados">
+          <strong>Anexos Word generados</strong>
+          <ul>
+            {research.annexes.map((annex) => (
+              <li key={annex.id}>
+                <span>Anexo {annex.annexNumber}</span>
+                <div>
+                  <button className="eval-btn eval-btn--outline" type="button" onClick={() => void openAnnex(annex.id, false)}>
+                    Visualizar
+                  </button>
+                  <button className="eval-btn eval-btn--primary" type="button" onClick={() => void openAnnex(annex.id, true)}>
+                    Descargar
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {message && <p className="research-management-card__message" role="status">{message}</p>}
     </article>
   );

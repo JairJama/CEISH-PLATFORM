@@ -286,7 +286,7 @@ export async function saveStratificationDecision(
     );
     const assignment = assignmentResult.rows[0];
     if (!assignment) return 'not-found';
-    if (['classified', 'cancelled'].includes(assignment.classification_status)) return 'closed';
+    if (assignment.classification_status === 'cancelled') return 'closed';
     if (!assignment.conflict_cleared || !assignment.annex_27_id) return 'conflict-required';
 
     await client.query(

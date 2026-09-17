@@ -105,6 +105,11 @@ export interface AdminResearchItem {
   stratifier_email: string | null;
   stratification_decided_at: string | null;
   qualification_status: QualificationStatus | null;
+  annexes: Array<{
+    id: string;
+    annexNumber: 11 | 23 | 27;
+    documentName: string;
+  }>;
 }
 
 async function apiPatch<T>(path: string, body: unknown): Promise<T> {
@@ -163,6 +168,10 @@ export const workflowService = {
 
   updateAnnex11(id: string, data: Record<string, unknown>): Promise<{ message: string }> {
     return apiPatch(`/api/stratifications/${id}/annex-11`, { data });
+  },
+
+  getAnnexDocumentUrl(id: string): Promise<{ url: string; documentName: string }> {
+    return apiGet(`/api/annexes/${id}/document`);
   },
 
   saveNoRiskDecision(id: string, annex27: Annex27Payload): Promise<{ result: string; message: string }> {

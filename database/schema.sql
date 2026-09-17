@@ -142,6 +142,9 @@ CREATE TABLE research_annexes (
   status        VARCHAR(20) NOT NULL DEFAULT 'draft'
                   CHECK (status IN ('draft', 'completed', 'voided')),
   data          JSONB NOT NULL DEFAULT '{}'::jsonb,
+  document_name VARCHAR(255),
+  document_path TEXT,
+  document_updated_at TIMESTAMPTZ,
   created_by    UUID NOT NULL REFERENCES users(id),
   completed_by  UUID REFERENCES users(id),
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -161,6 +164,9 @@ CREATE UNIQUE INDEX idx_research_annexes_active_11
 CREATE UNIQUE INDEX idx_research_annexes_active_27
   ON research_annexes(assignment_id, annex_number)
   WHERE annex_number = 27 AND status <> 'voided';
+CREATE INDEX idx_research_annexes_document
+  ON research_annexes(id)
+  WHERE document_path IS NOT NULL;
 
 -- ----------------------------------------------------------------------------
 -- qualification_cases / qualification_cycles

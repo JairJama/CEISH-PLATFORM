@@ -13,6 +13,11 @@ export interface AdminResearchRow {
   stratifier_email: string | null;
   stratification_decided_at: string | null;
   qualification_status: string | null;
+  annexes: Array<{
+    id: string;
+    annexNumber: 11 | 23 | 27;
+    documentName: string;
+  }>;
 }
 
 export async function listAdminResearch(): Promise<AdminResearchRow[]> {
@@ -22,13 +27,25 @@ export async function listAdminResearch(): Promise<AdminResearchRow[]> {
             s.classification_status, s.risk_level,
             sa.stratifier_id, stratifier.name AS stratifier_name,
             stratifier.email AS stratifier_email, sa.decided_at AS stratification_decided_at,
-            qc.status AS qualification_status
+            qc.status AS qualification_status,
+            COALESCE(annexes.items, '[]'::json) AS annexes
        FROM submissions s
        JOIN users researcher ON researcher.id = s.student_id
        LEFT JOIN stratification_assignments sa
          ON sa.submission_id = s.id AND sa.round_number = 1
        LEFT JOIN users stratifier ON stratifier.id = sa.stratifier_id
        LEFT JOIN qualification_cases qc ON qc.submission_id = s.id
+       LEFT JOIN LATERAL (
+         SELECT json_agg(json_build_object(
+           'id', annex.id,
+           'annexNumber', annex.annex_number,
+           'documentName', annex.document_name
+         ) ORDER BY annex.annex_number, annex.created_at) AS items
+           FROM research_annexes annex
+          WHERE annex.submission_id = s.id
+            AND annex.status <> 'voided'
+            AND annex.document_path IS NOT NULL
+       ) annexes ON TRUE
       ORDER BY s.submitted_at DESC`,
   );
 }

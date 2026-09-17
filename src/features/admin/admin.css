@@ -75,6 +75,41 @@
   color: var(--c-text-2);
 }
 
+.research-management-card__annexes {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--c-border);
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.research-management-card__annexes > strong {
+  color: var(--c-text-2);
+}
+
+.research-management-card__annexes ul {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.research-management-card__annexes li,
+.research-management-card__annexes li > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.research-management-card__annexes li {
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--c-surface-2);
+}
+
 /* ---- Assignment panel ---- */
 .assignment-grid {
   display: grid;
