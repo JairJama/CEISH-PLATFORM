@@ -44,6 +44,11 @@ interface SubmissionDTO {
   classification_status: StudentSubmission['classificationStatus'];
   risk_level: StudentSubmission['riskLevel'] | null;
   classified_at: string | null;
+  qualification_id: string | null;
+  qualification_status: StudentSubmission['qualificationStatus'] | null;
+  qualification_cycle: number | null;
+  qualification_observations: string | null;
+  correction_due_at: string | null;
 }
 interface AssignmentDTO {
   id: string; teacher_id: string; student_id: string; created_at: string;
@@ -89,6 +94,11 @@ function mapSubmission(d: SubmissionDTO): StudentSubmission {
     classificationStatus: d.classification_status,
     riskLevel: d.risk_level ?? undefined,
     classifiedAt: d.classified_at ?? undefined,
+    qualificationId: d.qualification_id ?? undefined,
+    qualificationStatus: d.qualification_status ?? undefined,
+    qualificationCycle: d.qualification_cycle ?? undefined,
+    qualificationObservations: d.qualification_observations ?? undefined,
+    correctionDueAt: d.correction_due_at ?? undefined,
   };
 }
 

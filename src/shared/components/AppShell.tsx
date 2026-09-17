@@ -35,6 +35,16 @@ const EVALUATOR_NAV: NavItem[] = [
     ),
   },
   {
+    to: '/evaluador/calificacion',
+    label: 'Calificación',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M4 2h10v14H4V2z" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6.5 6h5M6.5 9h5M6.5 12h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     to: '/evaluador',
     label: 'Mis estudiantes',
     icon: (
@@ -66,6 +76,16 @@ const ADMIN_NAV: NavItem[] = [
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
         <path d="M4 2h7l3 3v11H4V2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
         <path d="M11 2v3h3M6.5 9h5M6.5 12h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    to: '/admin/investigaciones',
+    label: 'Investigaciones',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="3" y="2" width="12" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6 6h6M6 9h6M6 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     ),
   },

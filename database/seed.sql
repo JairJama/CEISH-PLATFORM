@@ -21,6 +21,12 @@ INSERT INTO users (id, name, email, password, role_id) VALUES
   -- profesor demo
   ('b0000000-0000-0000-0000-000000000001', 'Profesor Demo','profesor@ceish.edu','scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '22222222-2222-2222-2222-222222222222'),
   ('b0000000-0000-0000-0000-000000000002', 'Miembro CEISH Demo','miembro@ceish.edu','scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '22222222-2222-2222-2222-222222222222'),
+  ('b0000000-0000-0000-0000-000000000003', 'Miembro CEISH 01','miembro01@ceish.edu','scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '22222222-2222-2222-2222-222222222222'),
+  ('b0000000-0000-0000-0000-000000000004', 'Miembro CEISH 02','miembro02@ceish.edu','scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '22222222-2222-2222-2222-222222222222'),
+  ('b0000000-0000-0000-0000-000000000005', 'Miembro CEISH 03','miembro03@ceish.edu','scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '22222222-2222-2222-2222-222222222222'),
+  ('b0000000-0000-0000-0000-000000000006', 'Miembro CEISH 04','miembro04@ceish.edu','scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '22222222-2222-2222-2222-222222222222'),
+  ('b0000000-0000-0000-0000-000000000007', 'Miembro CEISH 05','miembro05@ceish.edu','scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '22222222-2222-2222-2222-222222222222'),
+  ('b0000000-0000-0000-0000-000000000008', 'Miembro CEISH 06','miembro06@ceish.edu','scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '22222222-2222-2222-2222-222222222222'),
   -- estudiantes demo
   ('c0000000-0000-0000-0000-000000000001', 'Juan Pérez',   'juan@ceish.edu',    'scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '11111111-1111-1111-1111-111111111111'),
   ('c0000000-0000-0000-0000-000000000002', 'María López',  'maria@ceish.edu',   'scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '11111111-1111-1111-1111-111111111111'),
@@ -39,14 +45,41 @@ INSERT INTO assignments (teacher_id, student_id) VALUES
 -- ----------------------------------------------------------------------------
 -- Nota: el document_path apunta a un objeto de ejemplo que no existe físicamente
 -- en MinIO. Para una visualización real, sube un PDF nuevo desde la interfaz.
-INSERT INTO submissions (id, student_id, document_name, document_path, comment, status, submitted_at) VALUES
+INSERT INTO submissions (id, student_id, research_code, title, document_name, document_path, comment, status, submitted_at) VALUES
   ('d0000000-0000-0000-0000-000000000001',
    'c0000000-0000-0000-0000-000000000001',
+   'CEISH-00001',
+   'Proyecto de investigación de Juan Pérez',
    'Proyecto_Final_Juan.pdf',
    'documents/seed-proyecto-final-juan.pdf',
    'Primera versión del proyecto de investigación.',
    'submitted',
    NOW() - INTERVAL '3 days');
+
+INSERT INTO submission_documents (
+  submission_id, document_name, document_path, mime_type, size_bytes
+) VALUES (
+  'd0000000-0000-0000-0000-000000000001',
+  'Proyecto_Final_Juan.pdf',
+  'documents/seed-proyecto-final-juan.pdf',
+  'application/pdf',
+  1
+);
+
+INSERT INTO research_annexes (
+  submission_id, annex_number, status, data, created_by, completed_at
+) VALUES (
+  'd0000000-0000-0000-0000-000000000001',
+  11,
+  'completed',
+  jsonb_build_object(
+    'researchCode', 'CEISH-00001',
+    'title', 'Proyecto de investigación de Juan Pérez',
+    'researcherName', 'Juan Pérez'
+  ),
+  'c0000000-0000-0000-0000-000000000001',
+  NOW() - INTERVAL '3 days'
+);
 
 -- ----------------------------------------------------------------------------
 -- reviews  (el profesor demo revisa la entrega de Juan)

@@ -13,7 +13,7 @@ const RISK_LABELS: Record<RiskLevel, string> = {
 function StratificationCard({ task, onSaved }: { task: StratificationTask; onSaved: () => Promise<void> }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const closed = task.classification_status === 'classified';
+  const closed = task.classification_status === 'classified' || task.classification_status === 'cancelled';
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -43,7 +43,7 @@ function StratificationCard({ task, onSaved }: { task: StratificationTask; onSav
           <p>{task.researcher_name} · {task.researcher_email}</p>
         </div>
         <span className={`badge ${closed ? 'badge--success' : 'badge--warning'}`}>
-          {closed ? 'Clasificada' : task.decided_at ? 'Esperando consenso' : 'Pendiente'}
+          {task.classification_status === 'cancelled' ? 'Cancelada' : closed ? 'Clasificada' : task.decided_at ? 'Esperando consenso' : 'Pendiente'}
         </span>
       </div>
 
@@ -57,7 +57,7 @@ function StratificationCard({ task, onSaved }: { task: StratificationTask; onSav
         <div className="stratification-card__result">
           Nivel acordado: <strong>{RISK_LABELS[task.final_risk_level]}</strong>
         </div>
-      ) : (
+      ) : !closed ? (
         <form className="stratification-card__form" onSubmit={submit}>
           <fieldset disabled={saving}>
             <legend>Selecciona el nivel de riesgo</legend>
@@ -72,7 +72,7 @@ function StratificationCard({ task, onSaved }: { task: StratificationTask; onSav
             {saving ? 'Guardando...' : task.decided_at ? 'Actualizar dictamen' : 'Guardar dictamen'}
           </button>
         </form>
-      )}
+      ) : <div className="stratification-card__result">Esta investigación fue cancelada por administración.</div>}
 
       {message && <p className="stratification-card__message" role="status">{message}</p>}
       <button

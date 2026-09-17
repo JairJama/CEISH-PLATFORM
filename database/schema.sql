@@ -65,6 +65,8 @@ CREATE TABLE researcher_profiles (
 CREATE TABLE submissions (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  research_code VARCHAR(11) NOT NULL UNIQUE,
+  title         TEXT NOT NULL,
   document_name VARCHAR(255) NOT NULL,           -- nombre original del archivo
   document_path TEXT,                            -- clave del objeto en MinIO (bucket "documents")
   comment       TEXT NOT NULL DEFAULT '',
@@ -75,9 +77,9 @@ CREATE TABLE submissions (
   grade         NUMERIC(4,2) CHECK (grade >= 0 AND grade <= 10),
   final_comment TEXT,                                -- retroalimentación anónima para el estudiante
   classification_status VARCHAR(30) NOT NULL DEFAULT 'awaiting-assignment'
-                  CHECK (classification_status IN (
-                    'awaiting-assignment', 'awaiting-first', 'awaiting-second',
-                    'awaiting-consensus', 'classified'
+                    CHECK (classification_status IN (
+                      'awaiting-assignment', 'awaiting-first', 'awaiting-second',
+                    'awaiting-consensus', 'classified', 'cancelled'
                   )),
   risk_level VARCHAR(30)
                   CHECK (risk_level IN ('no-risk', 'minimal-risk', 'greater-than-minimal')),
@@ -86,6 +88,24 @@ CREATE TABLE submissions (
 
 CREATE INDEX idx_submissions_student ON submissions(student_id);
 CREATE INDEX idx_submissions_status  ON submissions(status);
+
+-- ----------------------------------------------------------------------------
+-- submission_documents
+-- Una investigación se presenta como un conjunto de documentos Word.
+-- ----------------------------------------------------------------------------
+CREATE TABLE submission_documents (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  submission_id UUID NOT NULL REFERENCES submissions(id) ON DELETE CASCADE,
+  document_name VARCHAR(255) NOT NULL,
+  document_path TEXT NOT NULL,
+  mime_type     VARCHAR(120) NOT NULL,
+  size_bytes    BIGINT NOT NULL CHECK (size_bytes > 0),
+  uploaded_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT submission_documents_path_unique UNIQUE (submission_id, document_path)
+);
+
+CREATE INDEX idx_submission_documents_submission
+  ON submission_documents(submission_id, uploaded_at);
 
 -- ----------------------------------------------------------------------------
 -- stratification_assignments
@@ -109,6 +129,84 @@ CREATE INDEX idx_stratification_member
   ON stratification_assignments(stratifier_id, decided_at);
 CREATE INDEX idx_stratification_submission
   ON stratification_assignments(submission_id);
+
+-- ----------------------------------------------------------------------------
+-- research_annexes
+-- Instancias editables y auditables de los anexos 11, 23 y 27.
+-- ----------------------------------------------------------------------------
+CREATE TABLE research_annexes (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  submission_id UUID NOT NULL REFERENCES submissions(id) ON DELETE CASCADE,
+  assignment_id UUID REFERENCES stratification_assignments(id) ON DELETE SET NULL,
+  annex_number  SMALLINT NOT NULL CHECK (annex_number IN (11, 23, 27)),
+  status        VARCHAR(20) NOT NULL DEFAULT 'draft'
+                  CHECK (status IN ('draft', 'completed', 'voided')),
+  data          JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_by    UUID NOT NULL REFERENCES users(id),
+  completed_by  UUID REFERENCES users(id),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at  TIMESTAMPTZ
+);
+
+CREATE INDEX idx_research_annexes_submission
+  ON research_annexes(submission_id, annex_number, created_at DESC);
+CREATE INDEX idx_research_annexes_assignment
+  ON research_annexes(assignment_id, annex_number, created_at DESC);
+CREATE INDEX idx_research_annexes_completed_by
+  ON research_annexes(completed_by, annex_number);
+CREATE UNIQUE INDEX idx_research_annexes_active_11
+  ON research_annexes(submission_id, annex_number)
+  WHERE annex_number = 11 AND status <> 'voided';
+CREATE UNIQUE INDEX idx_research_annexes_active_27
+  ON research_annexes(assignment_id, annex_number)
+  WHERE annex_number = 27 AND status <> 'voided';
+
+-- ----------------------------------------------------------------------------
+-- qualification_cases / qualification_cycles
+-- Para investigaciones sin riesgo, el primer estratificador continúa como
+-- calificador. Cada ciclo conserva observaciones y el informe de corrección.
+-- ----------------------------------------------------------------------------
+CREATE TABLE qualification_cases (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  submission_id  UUID NOT NULL UNIQUE REFERENCES submissions(id) ON DELETE CASCADE,
+  qualifier_id   UUID NOT NULL REFERENCES users(id),
+  status         VARCHAR(30) NOT NULL DEFAULT 'pending-review'
+                   CHECK (status IN (
+                     'pending-review', 'corrections-required', 'resubmitted',
+                     'approved', 'cancelled', 'expired'
+                   )),
+  current_cycle  SMALLINT NOT NULL DEFAULT 1 CHECK (current_cycle >= 1),
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at   TIMESTAMPTZ,
+  cancelled_at   TIMESTAMPTZ
+);
+
+CREATE INDEX idx_qualification_qualifier
+  ON qualification_cases(qualifier_id, status);
+
+CREATE TABLE qualification_cycles (
+  id                       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  qualification_id         UUID NOT NULL REFERENCES qualification_cases(id) ON DELETE CASCADE,
+  cycle_number             SMALLINT NOT NULL CHECK (cycle_number >= 1),
+  status                   VARCHAR(30) NOT NULL DEFAULT 'pending-review'
+                             CHECK (status IN (
+                               'pending-review', 'corrections-required', 'resubmitted',
+                               'reviewed', 'approved'
+                             )),
+  observations             TEXT NOT NULL DEFAULT '',
+  correction_due_at        TIMESTAMPTZ,
+  correction_document_name VARCHAR(255),
+  correction_document_path TEXT,
+  correction_submitted_at  TIMESTAMPTZ,
+  reviewed_at              TIMESTAMPTZ,
+  created_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT qualification_cycle_unique UNIQUE (qualification_id, cycle_number)
+);
+
+CREATE INDEX idx_qualification_cycles_case
+  ON qualification_cycles(qualification_id, cycle_number);
 
 -- ----------------------------------------------------------------------------
 -- assignments  (relación profesor - estudiante)

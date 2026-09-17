@@ -13,7 +13,7 @@ import busboy from 'busboy';
 import { listUsers, listUsersByRole, getUserById } from './queries/users';
 import {
   listSubmissions, getSubmissionByStudent, getSubmissionById,
-  createSubmission, updateSubmission, deleteSubmission, getDocumentPath,
+  createSubmission, updateSubmission, deleteSubmission, getDocumentPath, getSubmissionDocument,
 } from './queries/submissions';
 import {
   listAssignments, listAssignmentsByTeacher, createAssignment, deleteAssignment,
@@ -25,11 +25,17 @@ import {
   reviewRegistrationRequest, type ResearcherType,
 } from './queries/registrationRequests';
 import {
-  hasStratificationAssignment, listStratificationTasks, saveStratificationDecision,
-  type RiskLevel,
+  declareStratificationConflict, hasStratificationAssignment,
+  listStratificationTasks, saveStratificationDecision,
+  type Annex27Input,
 } from './queries/stratifications';
+import {
+  cancelQualification, expireOverdueQualifications, getCorrectionDocument,
+  listQualificationTasks, reviewQualification, submitCorrection,
+} from './queries/qualifications';
+import { cancelResearch, listAdminResearch, reassignStratifier } from './queries/adminResearch';
 import type { SaveReviewInput } from './queries/reviews';
-import { uploadPdf, getPresignedUrl, getObjectStream } from '../lib/minio';
+import { uploadDocument, getPresignedUrl, getObjectStream } from '../lib/minio';
 import { clearSession, getSession, setSession, type SessionUser } from './session';
 
 const MAX_BYTES = Number(process.env.UPLOAD_MAX_MB ?? 15) * 1024 * 1024;
@@ -206,6 +212,42 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
     return true;
   }
 
+  // ── Administración de investigaciones ───────────────────────────────────
+  if (path === '/api/admin/research' && method === 'GET') {
+    if (!requireRole(req, res, 'admin')) return true;
+    sendJson(res, 200, await listAdminResearch());
+    return true;
+  }
+  const adminResearchReassignMatch = path.match(/^\/api\/admin\/research\/([^/]+)\/reassign$/);
+  if (adminResearchReassignMatch && method === 'PATCH') {
+    if (!requireRole(req, res, 'admin')) return true;
+    const b = await readJsonBody(req);
+    const result = await reassignStratifier(adminResearchReassignMatch[1], String(b.stratifierId ?? ''));
+    if (result === 'reassigned') {
+      sendJson(res, 200, { message: 'Estratificador reasignado' });
+      return true;
+    }
+    const status = result === 'not-found' ? 404 : result === 'invalid-member' ? 400 : 409;
+    sendJson(res, status, { error: result === 'locked'
+      ? 'No se puede reasignar una investigación que ya tiene dictamen'
+      : result === 'invalid-member' ? 'El usuario seleccionado no es miembro CEISH'
+      : 'Investigación no encontrada' });
+    return true;
+  }
+  const adminResearchCancelMatch = path.match(/^\/api\/admin\/research\/([^/]+)\/cancel$/);
+  if (adminResearchCancelMatch && method === 'PATCH') {
+    if (!requireRole(req, res, 'admin')) return true;
+    const result = await cancelResearch(adminResearchCancelMatch[1]);
+    if (result === 'cancelled') {
+      sendJson(res, 200, { message: 'Investigación cancelada' });
+      return true;
+    }
+    sendJson(res, result === 'not-found' ? 404 : 409, {
+      error: result === 'closed' ? 'La investigación ya está cerrada' : 'Investigación no encontrada',
+    });
+    return true;
+  }
+
   // ── Users ──────────────────────────────────────────────────────────────
   if (path === '/api/users' && method === 'GET') {
     const session = requireSession(req, res);
@@ -248,13 +290,39 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       sendJson(res, 400, { error: 'No se recibió ningún archivo' });
       return true;
     }
-    const isPdf = file.mimeType === 'application/pdf' || file.filename.toLowerCase().endsWith('.pdf');
-    if (!isPdf) {
-      sendJson(res, 415, { error: 'Solo se permiten archivos PDF' });
+    const extension = file.filename.toLowerCase().match(/\.(docx?|pdf)$/)?.[0];
+    if (!extension) {
+      sendJson(res, 415, { error: 'Solo se permiten documentos Word (.doc, .docx) o PDF' });
       return true;
     }
-    const documentPath = await uploadPdf(file.buffer, file.filename);
-    sendJson(res, 201, { documentPath, documentName: file.filename, size: file.buffer.length });
+    const mimeType = extension === '.docx'
+      ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      : extension === '.doc' ? 'application/msword' : 'application/pdf';
+    const documentPath = await uploadDocument(file.buffer, file.filename, mimeType);
+    sendJson(res, 201, {
+      documentPath,
+      documentName: file.filename,
+      mimeType,
+      size: file.buffer.length,
+    });
+    return true;
+  }
+
+  // GET /api/submission-documents/:id -> URL firmada para un documento del conjunto
+  const submissionDocumentMatch = path.match(/^\/api\/submission-documents\/([^/]+)$/);
+  if (submissionDocumentMatch && method === 'GET') {
+    const session = requireSession(req, res);
+    if (!session) return true;
+    const document = await getSubmissionDocument(submissionDocumentMatch[1]);
+    if (!document) {
+      sendJson(res, 404, { error: 'Documento no encontrado' });
+      return true;
+    }
+    if (!(await canAccessSubmission(session, document.submission_id))) {
+      sendJson(res, 403, { error: 'No tienes permiso para consultar este documento' });
+      return true;
+    }
+    sendJson(res, 200, { url: await getPresignedUrl(document.document_path) });
     return true;
   }
 
@@ -308,6 +376,7 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
   if (path === '/api/submissions' && method === 'GET') {
     const session = requireSession(req, res);
     if (!session) return true;
+    await expireOverdueQualifications();
     const studentId = url.searchParams.get('studentId');
     if (session.role === 'student') {
       sendJson(res, 200, await getSubmissionByStudent(session.id));
@@ -324,10 +393,26 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
     const session = requireRole(req, res, 'student');
     if (!session) return true;
     const b = await readJsonBody(req);
+    const title = String(b.title ?? '').trim();
+    const documents = Array.isArray(b.documents) ? b.documents.map((document) => {
+      const item = document as Record<string, unknown>;
+      return {
+        documentName: String(item.documentName ?? '').trim(),
+        documentPath: String(item.documentPath ?? '').trim(),
+        mimeType: String(item.mimeType ?? '').trim(),
+        sizeBytes: Number(item.sizeBytes ?? 0),
+      };
+    }) : [];
+    if (!title || !documents.length || documents.some((document) => (
+      !document.documentName || !document.documentPath || !document.mimeType || document.sizeBytes <= 0
+    ))) {
+      sendJson(res, 400, { error: 'El título y al menos un documento Word válido son requeridos' });
+      return true;
+    }
     const created = await createSubmission({
       studentId: session.id,
-      documentName: String(b.documentName),
-      documentPath: (b.documentPath as string | undefined) ?? null,
+      title,
+      documents,
       comment: String(b.comment ?? ''),
     });
     sendJson(res, 201, created);
@@ -357,10 +442,19 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       return true;
     }
     const b = await readJsonBody(req);
+    const documents = Array.isArray(b.documents) ? b.documents.map((document) => {
+      const item = document as Record<string, unknown>;
+      return {
+        documentName: String(item.documentName ?? '').trim(),
+        documentPath: String(item.documentPath ?? '').trim(),
+        mimeType: String(item.mimeType ?? '').trim(),
+        sizeBytes: Number(item.sizeBytes ?? 0),
+      };
+    }) : undefined;
     const updated = await updateSubmission(subMatch[1], {
-      documentName: b.documentName as string | undefined,
+      title: b.title ? String(b.title).trim() : undefined,
       comment: b.comment as string | undefined,
-      documentPath: b.documentPath as string | undefined,
+      documents,
     });
     sendJson(res, updated ? 200 : 404, updated ?? { error: 'Entrega no encontrada' });
     return true;
@@ -418,14 +512,28 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
     const session = requireRole(req, res, 'evaluator');
     if (!session) return true;
     const b = await readJsonBody(req);
-    const riskLevel = b.riskLevel;
-    const validRisk = riskLevel === 'no-risk' || riskLevel === 'minimal-risk' || riskLevel === 'greater-than-minimal';
-    if (!validRisk) {
-      sendJson(res, 400, { error: 'Selecciona un nivel de riesgo válido' });
+    const annex = b.annex27 as Annex27Input | undefined;
+    const criteria = Array.isArray(annex?.criteria) ? annex.criteria : [];
+    const requiredFields = [
+      annex?.researchType,
+      annex?.location,
+      annex?.responsibleInstitutions,
+      annex?.principalInvestigatorId,
+    ];
+    const invalidCriteria = criteria.length !== 8 || criteria.some((criterion) => (
+      !criterion.indicator?.trim()
+      || (criterion.answer !== 'yes' && criterion.answer !== 'no')
+    ));
+    if (requiredFields.some((value) => !String(value ?? '').trim()) || invalidCriteria) {
+      sendJson(res, 400, { error: 'Completa la información general y los ocho indicadores del Anexo 27' });
+      return true;
+    }
+    if (!criteria.some((criterion) => criterion.answer === 'yes')) {
+      sendJson(res, 400, { error: 'Al menos un indicador debe aplicar para clasificar la investigación sin riesgo' });
       return true;
     }
     const result = await saveStratificationDecision(
-      stratificationMatch[1], session.id, riskLevel as RiskLevel,
+      stratificationMatch[1], session.id, annex!,
     );
     if (result === 'not-found') {
       sendJson(res, 404, { error: 'Asignación no encontrada' });
@@ -435,12 +543,142 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       sendJson(res, 409, { error: 'Esta investigación ya fue clasificada' });
       return true;
     }
+    if (result === 'conflict-required') {
+      sendJson(res, 409, { error: 'Primero debes completar el Anexo 23 sin conflicto de interés' });
+      return true;
+    }
+    sendJson(res, 200, { result, message: 'Anexo 27 completado: investigación clasificada sin riesgo' });
+    return true;
+  }
+
+  const stratificationConflictMatch = path.match(/^\/api\/stratifications\/([^/]+)\/conflict$/);
+  if (stratificationConflictMatch && method === 'POST') {
+    const session = requireRole(req, res, 'evaluator');
+    if (!session) return true;
+    const b = await readJsonBody(req);
+    const placeDate = String(b.placeDate ?? '').trim();
+    if (!placeDate || typeof b.hasConflict !== 'boolean') {
+      sendJson(res, 400, { error: 'Completa el lugar, fecha y declaración de conflicto' });
+      return true;
+    }
+    const result = await declareStratificationConflict(stratificationConflictMatch[1], session.id, {
+      placeDate,
+      hasConflict: b.hasConflict,
+      details: String(b.details ?? '').trim(),
+    });
+    if (result === 'not-found') {
+      sendJson(res, 404, { error: 'Asignación no encontrada' });
+      return true;
+    }
+    if (result === 'closed') {
+      sendJson(res, 409, { error: 'Esta investigación ya fue clasificada' });
+      return true;
+    }
+    const message = result === 'cleared'
+      ? 'Anexo 23 registrado. Ya puedes completar el Anexo 27.'
+      : result === 'reassigned'
+        ? 'Conflicto registrado. La investigación fue reasignada a otro miembro CEISH.'
+        : 'Conflicto registrado, pero no hay otro miembro CEISH disponible.';
+    sendJson(res, 200, { result, message });
+    return true;
+  }
+
+  // ── Qualification for no-risk research ─────────────────────────────────
+  if (path === '/api/qualifications' && method === 'GET') {
+    const session = requireRole(req, res, 'evaluator');
+    if (!session) return true;
+    sendJson(res, 200, await listQualificationTasks(session.id));
+    return true;
+  }
+  const qualificationReviewMatch = path.match(/^\/api\/qualifications\/([^/]+)\/review$/);
+  if (qualificationReviewMatch && method === 'PATCH') {
+    const session = requireRole(req, res, 'evaluator');
+    if (!session) return true;
+    const b = await readJsonBody(req);
+    if (typeof b.hasObservations !== 'boolean') {
+      sendJson(res, 400, { error: 'Indica si la investigación tiene observaciones' });
+      return true;
+    }
+    const observations = String(b.observations ?? '').trim();
+    if (b.hasObservations && !observations) {
+      sendJson(res, 400, { error: 'Describe las observaciones encontradas' });
+      return true;
+    }
+    const result = await reviewQualification(
+      qualificationReviewMatch[1], session.id, b.hasObservations, observations,
+    );
+    if (result === 'not-found') {
+      sendJson(res, 404, { error: 'Calificación no encontrada' });
+      return true;
+    }
+    if (result === 'closed') {
+      sendJson(res, 409, { error: 'Esta investigación no está disponible para revisión' });
+      return true;
+    }
     sendJson(res, 200, {
       result,
-      message: result === 'unavailable'
-        ? 'Dictamen guardado; aún no hay otro miembro CEISH disponible'
-        : result === 'classified' ? 'Clasificación completada' : 'Dictamen guardado',
+      message: result === 'approved'
+        ? 'Investigación aprobada'
+        : 'Observaciones notificadas; el investigador tiene 30 días para responder',
     });
+    return true;
+  }
+  const qualificationCancelMatch = path.match(/^\/api\/qualifications\/([^/]+)\/cancel$/);
+  if (qualificationCancelMatch && method === 'PATCH') {
+    const session = requireRole(req, res, 'evaluator');
+    if (!session) return true;
+    const cancelled = await cancelQualification(qualificationCancelMatch[1], session.id);
+    sendJson(res, cancelled ? 200 : 409, cancelled
+      ? { message: 'Investigación cancelada' }
+      : { error: 'La investigación ya está cerrada o no existe' });
+    return true;
+  }
+  const correctionSubmitMatch = path.match(/^\/api\/qualifications\/([^/]+)\/corrections$/);
+  if (correctionSubmitMatch && method === 'POST') {
+    const session = requireRole(req, res, 'student');
+    if (!session) return true;
+    const b = await readJsonBody(req);
+    const documentName = String(b.documentName ?? '').trim();
+    const documentPath = String(b.documentPath ?? '').trim();
+    if (!documentName || !documentPath) {
+      sendJson(res, 400, { error: 'El informe de correcciones es requerido' });
+      return true;
+    }
+    const result = await submitCorrection(
+      correctionSubmitMatch[1], session.id, documentName, documentPath,
+    );
+    if (result === 'not-found') {
+      sendJson(res, 404, { error: 'Calificación no encontrada' });
+      return true;
+    }
+    if (result === 'expired') {
+      sendJson(res, 410, { error: 'El plazo de 30 días venció y la investigación fue anulada' });
+      return true;
+    }
+    if (result === 'closed') {
+      sendJson(res, 409, { error: 'La investigación no está esperando correcciones' });
+      return true;
+    }
+    sendJson(res, 201, { message: 'Informe enviado para una nueva revisión' });
+    return true;
+  }
+  const correctionDocumentMatch = path.match(/^\/api\/qualification-corrections\/([^/]+)$/);
+  if (correctionDocumentMatch && method === 'GET') {
+    const session = requireSession(req, res);
+    if (!session) return true;
+    const document = await getCorrectionDocument(correctionDocumentMatch[1]);
+    if (!document) {
+      sendJson(res, 404, { error: 'Informe de correcciones no encontrado' });
+      return true;
+    }
+    const allowed = session.role === 'admin'
+      || session.id === document.researcher_id
+      || session.id === document.qualifier_id;
+    if (!allowed) {
+      sendJson(res, 403, { error: 'No tienes permiso para consultar este informe' });
+      return true;
+    }
+    sendJson(res, 200, { url: await getPresignedUrl(document.document_path) });
     return true;
   }
 

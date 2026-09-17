@@ -5,6 +5,7 @@ interface Props {
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onSubmitCorrections: () => void;
 }
 
 function formatDateTime(iso: string): string {
@@ -29,6 +30,7 @@ const CLASSIFICATION_LABEL = {
   'awaiting-second': 'Pendiente de segunda estratificación',
   'awaiting-consensus': 'Los estratificadores están resolviendo el consenso',
   classified: 'Clasificación de riesgo completada',
+  cancelled: 'Investigación cancelada por administración',
 } as const;
 
 const RISK_LABEL = {
@@ -37,7 +39,16 @@ const RISK_LABEL = {
   'greater-than-minimal': 'Riesgo mayor al mínimo',
 } as const;
 
-export function SubmissionCard({ submission, onView, onEdit, onDelete }: Props) {
+const QUALIFICATION_LABEL = {
+  'pending-review': 'Pendiente de calificación',
+  'corrections-required': 'Correcciones solicitadas',
+  resubmitted: 'Informe enviado; esperando nueva revisión',
+  approved: 'Investigación aprobada',
+  cancelled: 'Investigación cancelada por el calificador',
+  expired: 'Investigación anulada por vencimiento del plazo',
+} as const;
+
+export function SubmissionCard({ submission, onView, onEdit, onDelete, onSubmitCorrections }: Props) {
   const status = STATUS_CONFIG[submission.status];
   const isReviewed = submission.status === 'reviewed';
   const canModify = submission.classificationStatus === 'awaiting-assignment'
@@ -67,13 +78,36 @@ export function SubmissionCard({ submission, onView, onEdit, onDelete }: Props) 
         </div>
       )}
 
-      <div className={`submission-card__classification ${submission.riskLevel ? 'submission-card__classification--done' : ''}`}>
+      <div className={`submission-card__classification ${submission.riskLevel ? 'submission-card__classification--done' : ''} ${submission.classificationStatus === 'cancelled' ? 'submission-card__classification--cancelled' : ''}`}>
         <span className="submission-card__comment-label">Estado de estratificación</span>
         <p>{CLASSIFICATION_LABEL[submission.classificationStatus]}</p>
         {submission.riskLevel && (
           <strong>Tu investigación ha sido clasificada como: {RISK_LABEL[submission.riskLevel]}</strong>
         )}
       </div>
+
+      {submission.qualificationStatus && (
+        <div className={`submission-card__qualification submission-card__qualification--${submission.qualificationStatus}`}>
+          <span className="submission-card__comment-label">Calificación</span>
+          <strong>{QUALIFICATION_LABEL[submission.qualificationStatus]}</strong>
+          {submission.qualificationObservations && (
+            <div className="submission-card__qualification-observations">
+              <span>Observaciones del calificador</span>
+              <p>{submission.qualificationObservations}</p>
+            </div>
+          )}
+          {submission.qualificationStatus === 'corrections-required' && submission.correctionDueAt && (
+            <p className="submission-card__deadline">
+              Fecha máxima: {new Date(submission.correctionDueAt).toLocaleDateString('es-EC')}
+            </p>
+          )}
+          {submission.qualificationStatus === 'corrections-required' && (
+            <button className="eval-btn eval-btn--primary" onClick={onSubmitCorrections}>
+              Subir informe de correcciones
+            </button>
+          )}
+        </div>
+      )}
 
       {isReviewed && (
         <div className="submission-card__result">

@@ -11,7 +11,9 @@ import { ReviewPage } from '../../features/evaluator/components/ReviewPage';
 import { AdminDashboard } from '../../features/admin/AdminDashboard';
 import { AssignmentPanel } from '../../features/admin/components/AssignmentPanel';
 import { RegistrationRequestsPanel } from '../../features/admin/components/RegistrationRequestsPanel';
+import { ResearchManagementPanel } from '../../features/admin/components/ResearchManagementPanel';
 import { StratificationDashboard } from '../../features/evaluator/StratificationDashboard';
+import { QualificationDashboard } from '../../features/evaluator/QualificationDashboard';
 
 function RootRedirect() {
   const currentUser = useAuthStore((s) => s.currentUser);
@@ -50,9 +52,11 @@ export function AppRouter() {
           <Route path="/estudiante" element={<RequireRole role="student"><SubmissionPage /></RequireRole>} />
           <Route path="/evaluador" element={<RequireRole role="evaluator"><EvaluatorDashboard /></RequireRole>} />
           <Route path="/evaluador/estratificacion" element={<RequireRole role="evaluator"><StratificationDashboard /></RequireRole>} />
+          <Route path="/evaluador/calificacion" element={<RequireRole role="evaluator"><QualificationDashboard /></RequireRole>} />
           <Route path="/admin" element={<RequireRole role="admin"><AdminDashboard /></RequireRole>} />
           <Route path="/admin/asignaciones" element={<RequireRole role="admin"><AssignmentPanel /></RequireRole>} />
           <Route path="/admin/solicitudes" element={<RequireRole role="admin"><RegistrationRequestsPanel /></RequireRole>} />
+          <Route path="/admin/investigaciones" element={<RequireRole role="admin"><ResearchManagementPanel /></RequireRole>} />
         </Route>
 
         {/* Root redirect */}

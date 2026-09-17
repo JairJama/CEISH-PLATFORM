@@ -15,8 +15,16 @@ export type ClassificationStatus =
   | 'awaiting-first'
   | 'awaiting-second'
   | 'awaiting-consensus'
-  | 'classified';
+  | 'classified'
+  | 'cancelled';
 export type RiskLevel = 'no-risk' | 'minimal-risk' | 'greater-than-minimal';
+export type QualificationStatus =
+  | 'pending-review'
+  | 'corrections-required'
+  | 'resubmitted'
+  | 'approved'
+  | 'cancelled'
+  | 'expired';
 
 export interface StudentSubmission {
   id: string;
@@ -31,6 +39,11 @@ export interface StudentSubmission {
   classificationStatus: ClassificationStatus;
   riskLevel?: RiskLevel;
   classifiedAt?: string;
+  qualificationId?: string;
+  qualificationStatus?: QualificationStatus;
+  qualificationCycle?: number;
+  qualificationObservations?: string;
+  correctionDueAt?: string;
 }
 
 export type StageStatus = 'pending' | 'in-progress' | 'completed';

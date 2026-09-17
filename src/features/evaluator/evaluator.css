@@ -192,3 +192,32 @@
   .stratification-card__form { align-items: stretch; flex-direction: column; }
   .stratification-card__form .eval-btn { width: 100%; }
 }
+
+/* ---- No-risk qualification ---- */
+.qualification-list { display: flex; flex-direction: column; gap: 14px; }
+.qualification-card {
+  display: flex; flex-direction: column; gap: 14px; padding: 18px;
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xl);
+}
+.qualification-card__header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.qualification-card__header h2 { margin-top: 3px; font-size: 15px; color: var(--c-text); }
+.qualification-card__header p { margin-top: 3px; font-size: 12px; color: var(--c-text-muted); }
+.qualification-card__cycle { font-size: 10px; font-weight: 700; color: var(--c-primary); text-transform: uppercase; letter-spacing: .08em; }
+.qualification-card__notice { display: flex; flex-direction: column; gap: 5px; padding: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--r-md); font-size: 13px; color: #92400e; }
+.qualification-card__notice span { font-size: 11px; }
+.qualification-card__correction { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px; background: var(--c-primary-light); border: 1px solid var(--c-primary-border); border-radius: var(--r-md); }
+.qualification-card__correction div { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--c-text-2); }
+.qualification-card__correction span { font-size: 12px; color: var(--c-text-muted); }
+.qualification-card__form { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.qualification-card__form fieldset { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; }
+.qualification-card__form legend { width: 100%; margin-bottom: 5px; font-size: 12px; font-weight: 700; color: var(--c-text-2); }
+.qualification-card__form fieldset label { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--c-border); border-radius: var(--r-md); font-size: 12px; color: var(--c-text-2); }
+.qualification-card__observations { display: flex; flex-direction: column; gap: 5px; width: min(100%, 680px); font-size: 11px; font-weight: 700; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: .06em; }
+.qualification-card__observations textarea { width: 100%; padding: 10px 12px; resize: vertical; border: 1px solid var(--c-border); border-radius: var(--r-md); color: var(--c-text); font: inherit; line-height: 1.5; text-transform: none; letter-spacing: normal; }
+.qualification-card__observations textarea:focus { outline: 2px solid var(--c-primary-border); border-color: var(--c-primary); }
+.qualification-card__actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; border-top: 1px solid var(--c-border); }
+.qualification-card__message { font-size: 12px; color: var(--c-text-muted); }
+
+@media (max-width: 640px) {
+  .qualification-card__header, .qualification-card__correction { align-items: stretch; flex-direction: column; }
+}

@@ -4,6 +4,8 @@ import { submissionsService } from '../../services/submissions';
 import type { StudentSubmission } from '../../shared/types/platform.types';
 import { SubmissionCard } from './components/SubmissionCard';
 import { UploadModal } from './components/UploadModal';
+import { CorrectionUploadModal } from './components/CorrectionUploadModal';
+import { workflowService } from '../../services/workflowService';
 import './student.css';
 
 type ModalMode = 'create' | 'edit' | null;
@@ -13,6 +15,7 @@ export function SubmissionPage() {
   const [submission, setSubmission] = useState<StudentSubmission | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalMode, setModalMode] = useState<ModalMode>(null);
+  const [correctionModalOpen, setCorrectionModalOpen] = useState(false);
 
   useEffect(() => {
     void submissionsService.getForStudent(currentUser.id).then((sub) => {
@@ -53,6 +56,14 @@ export function SubmissionPage() {
     setSubmission(null);
   };
 
+  const handleCorrection = async (file: File) => {
+    if (!submission?.qualificationId) return;
+    await workflowService.submitCorrection(submission.qualificationId, file);
+    const updated = await submissionsService.getForStudent(currentUser.id);
+    setSubmission(updated);
+    setCorrectionModalOpen(false);
+  };
+
   return (
     <div className="page">
       <div className="page__header">
@@ -82,6 +93,7 @@ export function SubmissionPage() {
             onView={handleView}
             onEdit={() => setModalMode('edit')}
             onDelete={handleDelete}
+            onSubmitCorrections={() => setCorrectionModalOpen(true)}
           />
         ) : (
           <div className="empty-state">
@@ -109,6 +121,12 @@ export function SubmissionPage() {
           initialComment={submission?.comment}
           onConfirm={handleConfirm}
           onCancel={() => setModalMode(null)}
+        />
+      )}
+      {correctionModalOpen && (
+        <CorrectionUploadModal
+          onConfirm={handleCorrection}
+          onCancel={() => setCorrectionModalOpen(false)}
         />
       )}
     </div>
