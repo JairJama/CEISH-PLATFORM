@@ -22,7 +22,7 @@ export class RemoveParticipantUseCase {
     if (participant.isPrincipal && participants.filter((item) => item.isPrincipal).length <= 1) {
       throw new ConflictException('Assign another principal participant before removing the current one');
     }
-    const protectedStatuses = [
+    const protectedStatuses: InvestigationStatus[] = [
       InvestigationStatus.UNDER_EVALUATION,
       InvestigationStatus.WAITING_RESEARCHER_RESPONSE,
       InvestigationStatus.FINAL_REVIEW,

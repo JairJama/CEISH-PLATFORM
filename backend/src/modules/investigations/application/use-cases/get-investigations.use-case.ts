@@ -8,7 +8,8 @@ export class GetInvestigationsUseCase {
   constructor(@Inject(INVESTIGATION_REPOSITORY) private readonly investigationRepository: IInvestigationRepository) {}
 
   async execute(actorId: string, actorType: UserType, filters: QueryInvestigationsDto) {
-    if (![UserType.INVESTIGATOR, UserType.ADMIN].includes(actorType)) {
+    const allowedUserTypes: UserType[] = [UserType.INVESTIGATOR, UserType.ADMIN];
+    if (!allowedUserTypes.includes(actorType)) {
       throw new ForbiddenException('You cannot list investigations');
     }
     const page = filters.page ?? 1;

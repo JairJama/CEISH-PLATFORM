@@ -44,6 +44,29 @@ APP_HOST=0.0.0.0
 CORS_ORIGIN=http://localhost:5173
 ```
 
+El archivo `.env` de la raíz configura Docker Compose (PostgreSQL y MinIO). El archivo `backend/.env` configura NestJS, Prisma, JWT y MinIO; debe conservar las mismas credenciales de PostgreSQL y MinIO que la infraestructura local.
+
+## Dependencias y verificación técnica
+
+En septiembre de 2026 se hizo una instalación limpia de las dependencias de `backend` y se verificó la compilación:
+
+```powershell
+cd backend
+npm install
+npm run build
+```
+
+Resultado: `npm run build` finaliza exitosamente con `nest build`.
+
+Durante esta validación se agregó `@types/multer` como dependencia de desarrollo, necesaria para tipar `Express.Multer.File` en las cargas multipart. También se corrigieron los siguientes errores de compilación:
+
+- `WorkflowEventInterceptor` ahora comprueba de forma segura la estructura de la respuesta antes de acceder a sus campos.
+- Los casos de uso de Investigations y Risk Assessment tipan explícitamente las listas de roles y estados, evitando incompatibilidades entre uniones literales de TypeScript.
+- El módulo Documents fue formateado y recuperó una estructura sintáctica válida; se conservaron los casos de uso y se ordenaron las rutas específicas antes de `GET /:id`.
+- Se generó `backend/package-lock.json` al instalar dependencias. Debe versionarse para que el equipo instale la misma resolución de paquetes con `npm ci`.
+
+Si `npm install` muestra errores `TAR_ENTRY_ERROR`, `EPERM` o `ENOENT` dentro de `node_modules`, OneDrive está bloqueando o sincronizando archivos durante la instalación. Pausar su sincronización temporalmente y volver a ejecutar la instalación suele resolverlo.
+
 ## Módulos implementados
 
 ### Auth
@@ -140,7 +163,7 @@ Estos módulos tienen la base de dominio, DTOs, repositorios y algunos casos de 
 
 - `users` no almacena una cédula/identificación. Por eso no se puede verificar de forma robusta que un miembro CEISH no sea participante comparando cédulas; debe añadirse un campo de identificación al perfil o usuario.
 - `documents` no tiene `uploadedById`. La regla “solo quien subió el documento o un administrador puede eliminarlo” requiere agregar este campo y una migración.
-- Se agregó `@nestjs/config` a `backend/package.json`; ejecutar `npm install` después de actualizar dependencias.
+- El uso de `MulterModule.register({ dest: './uploads' })` debe revisarse antes de producción si las cargas se procesarán como `buffer`; el flujo de carga actual utiliza `file.buffer` para enviarlo a MinIO.
 
 ## Checklist antes de integrar o desplegar
 
@@ -148,6 +171,5 @@ Estos módulos tienen la base de dominio, DTOs, repositorios y algunos casos de 
 2. Ejecutar `npm run prisma:generate`.
 3. Asegurar que PostgreSQL y MinIO estén disponibles mediante Docker Compose.
 4. Ejecutar el seed si se necesitan datos de desarrollo.
-5. Ejecutar `npm run build` y corregir cualquier error pendiente.
+5. Ejecutar `npm run build` (verificado exitosamente en septiembre de 2026).
 6. Completar pruebas unitarias de casos de uso y pruebas e2e de los flujos de estado.
-

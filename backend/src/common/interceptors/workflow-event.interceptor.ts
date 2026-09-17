@@ -21,8 +21,8 @@ export class WorkflowEventInterceptor implements NestInterceptor {
     }
 
     return next.handle().pipe(
-      tap(async (responseBody) => {
-        if (!responseBody || !user) {
+      tap(async (responseBody: unknown) => {
+        if (!this.isRecord(responseBody) || !user) {
           return;
         }
 
@@ -52,7 +52,8 @@ export class WorkflowEventInterceptor implements NestInterceptor {
   }
 
   private extractEntityId(body: Record<string, unknown>): string | null {
-    return (body.id as string) ?? (body.data?.id as string) ?? null;
+    const data = this.toRecord(body.data);
+    return this.toStringOrNull(body.id) ?? this.toStringOrNull(data?.id);
   }
 
   private inferEntityType(url: string): string | null {
@@ -68,19 +69,34 @@ export class WorkflowEventInterceptor implements NestInterceptor {
   }
 
   private extractPreviousStatus(body: Record<string, unknown>): string | null {
-    return (body.previousStatus as string) ?? (body.data?.previousStatus as string) ?? null;
+    const data = this.toRecord(body.data);
+    return this.toStringOrNull(body.previousStatus) ?? this.toStringOrNull(data?.previousStatus);
   }
 
   private extractNewStatus(body: Record<string, unknown>): string | null {
-    return (body.status as string) ?? (body.data?.status as string) ?? null;
+    const data = this.toRecord(body.data);
+    return this.toStringOrNull(body.status) ?? this.toStringOrNull(data?.status);
   }
 
   private extractInvestigationId(body: Record<string, unknown>): string | null {
+    const data = this.toRecord(body.data);
     return (
-      (body.investigationId as string) ??
-      (body.data?.investigationId as string) ??
-      (body.data?.investigation_id as string) ??
+      this.toStringOrNull(body.investigationId) ??
+      this.toStringOrNull(data?.investigationId) ??
+      this.toStringOrNull(data?.investigation_id) ??
       null
     );
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private toRecord(value: unknown): Record<string, unknown> | null {
+    return this.isRecord(value) ? value : null;
+  }
+
+  private toStringOrNull(value: unknown): string | null {
+    return typeof value === 'string' ? value : null;
   }
 }

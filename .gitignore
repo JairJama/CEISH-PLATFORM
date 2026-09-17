@@ -10,7 +10,9 @@ database/.env
 
 # Node
 node_modules/
+node_modules.install-failed/
 dist/
+*.tsbuildinfo
 .pnp
 .pnp.js
 

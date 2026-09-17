@@ -15,7 +15,11 @@ export class CreateRiskAssessmentUseCase {
     if (adminType !== UserType.ADMIN) throw new ForbiddenException('Only administrators can create stratifications');
     const investigation = await this.prisma.investigation.findUnique({ where: { id: data.investigationId } });
     if (!investigation) throw new NotFoundException('Investigation not found');
-    if (![InvestigationStatus.WAITING_STRATIFICATION, InvestigationStatus.RESTRATIFICATION].includes(investigation.status as InvestigationStatus)) {
+    const allowedStatuses: InvestigationStatus[] = [
+      InvestigationStatus.WAITING_STRATIFICATION,
+      InvestigationStatus.RESTRATIFICATION,
+    ];
+    if (!allowedStatuses.includes(investigation.status as InvestigationStatus)) {
       throw new ConflictException('Investigation is not ready for stratification');
     }
     if (investigation.status === InvestigationStatus.WAITING_STRATIFICATION) {
