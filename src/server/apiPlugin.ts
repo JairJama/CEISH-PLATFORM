@@ -35,7 +35,7 @@ import {
 } from './queries/qualifications';
 import { cancelResearch, listAdminResearch, reassignStratifier } from './queries/adminResearch';
 import {
-  getAnnexDocument, regenerateAssignmentAnnexDocument,
+  getAnnexDocument, regenerateAnnexDocument, regenerateAssignmentAnnexDocument,
   regenerateSubmissionAnnexDocument,
 } from './queries/annexes';
 import type { SaveReviewInput } from './queries/reviews';
@@ -623,9 +623,9 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
   if (annexDocumentMatch && method === 'GET') {
     const session = requireSession(req, res);
     if (!session) return true;
-    const document = await getAnnexDocument(annexDocumentMatch[1]);
-    if (!document || !document.document_path) {
-      sendJson(res, 404, { error: 'El documento Word del anexo aún no está disponible' });
+    let document = await getAnnexDocument(annexDocumentMatch[1]);
+    if (!document) {
+      sendJson(res, 404, { error: 'Anexo no encontrado' });
       return true;
     }
     const isAssignedMember = session.role === 'evaluator'
@@ -635,6 +635,12 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       && document.annex_number === 11;
     if (session.role !== 'admin' && !isAssignedMember && !isResearcherWithExemption) {
       sendJson(res, 403, { error: 'No tienes permiso para consultar este anexo' });
+      return true;
+    }
+    // También recupera anexos completados antes de incorporar la generación de Word.
+    if (!document.document_path) document = await regenerateAnnexDocument(document.id);
+    if (!document?.document_path) {
+      sendJson(res, 404, { error: 'No se pudo generar el documento Word del anexo' });
       return true;
     }
     sendJson(res, 200, {

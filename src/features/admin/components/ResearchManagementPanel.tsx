@@ -138,7 +138,7 @@ function ResearchRow({
                 <span>Anexo {annex.annexNumber}</span>
                 <div>
                   <button className="eval-btn eval-btn--outline" type="button" onClick={() => void openAnnex(annex.id, false)}>
-                    Visualizar
+                    {annex.documentReady ? 'Visualizar' : 'Generar y visualizar'}
                   </button>
                   <button className="eval-btn eval-btn--primary" type="button" onClick={() => void openAnnex(annex.id, true)}>
                     Descargar

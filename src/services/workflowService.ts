@@ -109,6 +109,7 @@ export interface AdminResearchItem {
     id: string;
     annexNumber: 11 | 23 | 27;
     documentName: string;
+    documentReady: boolean;
   }>;
 }
 

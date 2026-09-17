@@ -17,6 +17,7 @@ export interface AdminResearchRow {
     id: string;
     annexNumber: 11 | 23 | 27;
     documentName: string;
+    documentReady: boolean;
   }>;
 }
 
@@ -39,12 +40,13 @@ export async function listAdminResearch(): Promise<AdminResearchRow[]> {
          SELECT json_agg(json_build_object(
            'id', annex.id,
            'annexNumber', annex.annex_number,
-           'documentName', annex.document_name
+           'documentName', COALESCE(annex.document_name, 'Anexo-' || annex.annex_number || '.docx'),
+           'documentReady', annex.document_path IS NOT NULL
          ) ORDER BY annex.annex_number, annex.created_at) AS items
            FROM research_annexes annex
           WHERE annex.submission_id = s.id
             AND annex.status <> 'voided'
-            AND annex.document_path IS NOT NULL
+            AND annex.status = 'completed'
        ) annexes ON TRUE
       ORDER BY s.submitted_at DESC`,
   );
