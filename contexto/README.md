@@ -6,23 +6,29 @@
 
 ## 1. ¿Qué es el proyecto?
 
-CEISH Platform es una plataforma institucional para recibir, consultar y evaluar documentos académicos en formato PDF.
+CEISH Platform es una plataforma institucional para registrar investigaciones, administrar su documentación, estratificar el nivel de riesgo y ejecutar la revisión ética de documentos.
 
 El flujo principal es:
 
-1. El estudiante carga un documento PDF y agrega un comentario opcional.
-2. El documento se almacena en MinIO y sus metadatos se guardan en PostgreSQL.
-3. Un administrador asigna estudiantes a profesores evaluadores.
-4. El evaluador consulta sus estudiantes asignados y abre una entrega.
-5. La revisión se realiza en cuatro etapas, mediante criterios que se pueden aprobar o rechazar.
-6. El evaluador agrega observaciones, referencias de página, una calificación final de 0 a 10 y un comentario final.
-7. El estudiante consulta el estado, la calificación y la retroalimentación final.
+1. Un investigador solicita acceso como investigador interno o externo.
+2. Un administrador revisa la solicitud y, si la aprueba, crea la cuenta con perfil de investigador.
+3. El investigador registra una investigación con título y uno o varios documentos Word.
+4. Los documentos se almacenan en MinIO y sus metadatos se guardan en PostgreSQL.
+5. El sistema asigna miembros CEISH para la estratificación; el administrador puede reasignar o cancelar antes del dictamen.
+6. El miembro completa los anexos 11 y 23. Si corresponde a una investigación sin riesgo, completa también el Anexo 27.
+7. El sistema genera documentos Word de los anexos a partir de las plantillas institucionales.
+8. Las investigaciones sin riesgo pasan al flujo de calificación y correcciones; las demás continúan hacia la revisión por etapas.
+9. El investigador consulta el estado, sus documentos, anexos y observaciones.
+
+### Estado vigente (2026-09-17)
+
+La rama `develop` contiene el flujo integrado de registro, administración de investigaciones, documentos múltiples, estratificación, anexos generados y calificación de investigaciones sin riesgo. La aplicación se ejecuta como frontend React/Vite con una API integrada en el servidor de desarrollo de Vite; no existe un backend separado.
 
 ### Roles
 
 | Rol de negocio | Nombre en BD | Nombre en UI | Responsabilidad |
 |---|---|---|---|
-| Estudiante | student | student | Entregar su documento y consultar el resultado. |
+| Investigador | student | student | Registrar investigaciones, adjuntar documentos y consultar anexos y resultados. |
 | Profesor evaluador | teacher | evaluator | Revisar y calificar documentos asignados. |
 | Administrador | admin | admin | Consultar el estado general y administrar asignaciones. |
 
@@ -35,10 +41,16 @@ La traducción teacher/evaluator se realiza principalmente en src/shared/service
 - Frontend React 19 + TypeScript ejecutado con Vite.
 - API mínima dentro del propio servidor de desarrollo de Vite.
 - PostgreSQL para usuarios, entregas, asignaciones y evaluaciones.
-- MinIO para almacenar los archivos PDF.
-- Login contra PostgreSQL.
+- MinIO para almacenar documentos PDF, DOC y DOCX.
+- Login contra PostgreSQL mediante sesión firmada en cookie HttpOnly y contraseñas scrypt.
+- Registro público de investigadores con aprobación o rechazo desde el panel administrativo.
 - Interfaces diferenciadas para estudiante, evaluador y administrador.
-- Subida, reemplazo, consulta y eliminación de entregas.
+- Investigaciones con código CEISH, título y múltiples documentos.
+- Subida, reemplazo, consulta y eliminación de investigaciones mientras el flujo lo permite.
+- Asignación automática de miembros CEISH, detección de conflicto de interés, reasignación y cancelación administrativa.
+- Formularios institucionales para anexos 11, 23 y 27.
+- Generación de archivos DOCX desde plantillas en `public/annex-templates/` y almacenamiento en MinIO.
+- Calificación de investigaciones sin riesgo, solicitud de correcciones y vencimiento automático del plazo de 30 días.
 - Revisión con cuatro etapas y criterios configurados en código.
 - Persistencia de estados, observaciones, referencias de página y calificación.
 - Panel administrativo de asignaciones.
@@ -46,15 +58,13 @@ La traducción teacher/evaluator se realiza principalmente en src/shared/service
 
 ### Diseñado o pendiente
 
-- Sesión HTTP firmada con cookie HttpOnly y contraseñas scrypt.
-- Autorización server-side por rol y por relación evaluador-estudiante.
 - Contraseñas con bcrypt.
 - Historial de auditoría.
 - Plantillas de criterios administrables desde la base de datos.
 - Anotaciones visuales completas sobre regiones del PDF.
 - Notificaciones por correo.
 - Estadísticas para administradores.
-- Múltiples versiones o entregas históricas.
+- Versionado completo de documentos y entregas históricas.
 - Borrado lógico y preservación completa del historial.
 
 docs/database-design.md describe una arquitectura futura más completa, con backend separado, JWT y tablas adicionales. La arquitectura real actual usa el middleware del dev server de Vite y no tiene un backend independiente.
@@ -63,22 +73,22 @@ docs/database-design.md describe una arquitectura futura más completa, con back
 
 ### Estudiante
 
-Entra a /estudiante y administra su entrega.
+Entra a `/estudiante` y administra su investigación.
 
 Puede:
 
-- Ver el documento que el sistema considera su entrega actual.
-- Subir un PDF nuevo.
+- Ver el código CEISH, título y documentos de su investigación.
+- Subir uno o varios documentos Word (`.doc` o `.docx`).
 - Escribir un comentario opcional.
-- Ver el PDF mediante una URL temporal.
-- Editar el comentario y reemplazar el PDF mientras la entrega no esté marcada como reviewed.
-- Eliminar la entrega mientras no esté marcada como reviewed.
-- Consultar el estado.
-- Consultar la calificación y el comentario final cuando la revisión termine.
+- Abrir los documentos mediante URLs temporales.
+- Descargar el Anexo 11 generado cuando esté disponible.
+- Editar el título, comentario y conjunto documental mientras el flujo lo permita.
+- Retirar la investigación antes de que quede cerrada.
+- Consultar la estratificación, anexos, observaciones y estado de correcciones.
 
 Reglas de carga:
 
-- Solo se acepta PDF.
+- Se aceptan documentos Word (`.doc` y `.docx`) para investigaciones.
 - El límite por defecto es 15 MB.
 - La validación se hace en el navegador y vuelve a hacerse en el servidor.
 - El archivo se envía como multipart/form-data a /api/upload.
@@ -94,7 +104,18 @@ Estados visibles para el estudiante:
 
 ### Evaluador
 
-Entra a /evaluador.
+Entra a `/evaluador` y puede utilizar `/evaluador/estratificacion`, `/evaluador/calificacion` y `/evaluador/revision/:submissionId`.
+
+En estratificación puede:
+
+- Consultar investigaciones asignadas.
+- Completar el Anexo 11 con la información administrativa y documental.
+- Declarar conflicto de interés mediante el Anexo 23.
+- Completar el Anexo 27 con los ocho indicadores de investigación sin riesgo.
+- Descargar los anexos DOCX generados.
+- Emitir el dictamen de riesgo cuando la información requerida esté completa.
+
+En el módulo de calificación puede revisar investigaciones clasificadas como sin riesgo, solicitar correcciones, aprobarlas o cancelarlas. El investigador dispone de 30 días para enviar el informe de correcciones.
 
 La pantalla muestra estudiantes que tienen una asignación con ese evaluador. Por estudiante muestra:
 
@@ -142,6 +163,8 @@ Tiene dos vistas:
 
 - /admin: panel general.
 - /admin/asignaciones: mantenimiento de asignaciones.
+- /admin/solicitudes: aprobación o rechazo de solicitudes de registro.
+- /admin/investigaciones: seguimiento, reasignación y cancelación de investigaciones.
 
 En el panel general puede:
 
@@ -159,9 +182,20 @@ En asignaciones puede:
 - Ver asignaciones existentes.
 - Eliminar una asignación.
 
+En solicitudes puede consultar el tipo de investigador y su afiliación. Al aprobar, se crea el usuario con rol `student` y un registro en `researcher_profiles`.
+
+En investigaciones puede:
+
+- Ver el estado de estratificación y calificación.
+- Reasignar el miembro CEISH antes de que exista un dictamen.
+- Cancelar una investigación que no esté aprobada o ya cancelada.
+- Abrir los documentos y anexos disponibles.
+
 La base de datos impide duplicar la misma pareja mediante UNIQUE (teacher_id, student_id).
 
 ## 4. Flujo funcional completo
+
+La descripción de esta sección conserva el flujo legacy de revisión PDF para mantenimiento del módulo `/evaluacion`. El flujo vigente de investigación, estratificación y anexos se describe en la sección de estado actual, en las rutas nuevas y en la guía de anexos.
 
 ### 4.1 Login
 
@@ -338,24 +372,42 @@ Campos principales:
 - id.
 - name.
 - email único.
-- password en texto plano para el prototipo.
+- password con hash scrypt.
 - role_id.
 - created_at.
 
+Los investigadores aprobados mantienen rol `student` por compatibilidad con la aplicación y además tienen un registro en `researcher_profiles` con tipo y afiliación.
+
 ### submissions
 
-Metadatos de la entrega:
+Metadatos de la investigación:
 
 - id.
+- research_code único con formato `CEISH-#####`.
+- title.
 - student_id.
-- document_name.
-- document_path: clave del PDF en MinIO.
+- document_name y document_path del documento principal.
 - comment.
 - status.
+- classification_status y risk_level.
 - submitted_at.
 - reviewed_at.
 - grade.
 - final_comment.
+
+`submission_documents` almacena el conjunto documental asociado y `research_annexes` conserva los datos y documentos generados de los anexos 11, 23 y 27.
+
+### registration_requests y researcher_profiles
+
+`registration_requests` conserva solicitudes públicas pendientes, aprobadas o rechazadas, incluyendo tipo de investigador, afiliación, hash de contraseña y datos de revisión. `researcher_profiles` relaciona al usuario aprobado con su información institucional.
+
+### stratification_assignments
+
+Relaciona una investigación con un miembro CEISH y conserva ronda, riesgo, fecha y dictamen. El sistema puede reasignar la primera ronda cuando existe conflicto de interés.
+
+### qualification_cases y qualification_cycles
+
+Gestionan la calificación de investigaciones sin riesgo, los ciclos de corrección, la fecha límite de 30 días y los documentos enviados por el investigador.
 
 ### assignments
 
@@ -500,16 +552,21 @@ Al cambiar persistencia o modelo de datos hay que revisar ese archivo y las cons
 | Ruta | Uso | Rol esperado |
 |---|---|---|
 | /login | Inicio de sesión. | Todos |
+| /registro | Solicitud pública de registro. | Público |
 | / | Redirección por usuario activo. | Todos |
-| /estudiante | Gestión de entrega. | Estudiante |
+| /estudiante | Gestión de investigación y documentos. | Investigador |
 | /evaluador | Estudiantes asignados. | Evaluador |
+| /evaluador/estratificacion | Anexos y dictamen de riesgo. | Evaluador |
+| /evaluador/calificacion | Calificación de investigaciones sin riesgo. | Evaluador |
 | /evaluador/revision/:submissionId | Revisión PDF. | Evaluador |
 | /admin | Panel general. | Administrador |
 | /admin/asignaciones | Asignaciones. | Administrador |
+| /admin/solicitudes | Solicitudes de registro. | Administrador |
+| /admin/investigaciones | Gestión de investigaciones. | Administrador |
 | /evaluacion | Módulo original. | Evaluador/prototipo |
 | /evaluacion/:id | Variante del módulo original. | Evaluador/prototipo |
 
-Importante: las rutas no tienen guards completos por rol. El sidebar se presenta según el usuario guardado, pero las rutas full-screen y la API no aplican autorización server-side. Esto debe corregirse antes de producción.
+Las rutas protegidas usan `RequireRole` en el frontend y la API valida sesión y rol mediante cookies HttpOnly firmadas. La autorización por asignación y propiedad se aplica en los endpoints principales; se deben mantener pruebas de autorización al ampliar el sistema.
 
 ## 12. Endpoints actuales
 
@@ -518,6 +575,11 @@ Importante: las rutas no tienen guards completos por rol. El sidebar se presenta
 | Método | Endpoint | Uso |
 |---|---|---|
 | POST | /api/auth/login | Validar correo y contraseña. |
+| POST | /api/auth/register | Crear una solicitud de registro pendiente. |
+| POST | /api/auth/logout | Cerrar sesión. |
+| GET | /api/auth/session | Consultar la sesión actual. |
+| GET | /api/registration-requests | Listar solicitudes para administración. |
+| PATCH | /api/registration-requests/:id | Aprobar o rechazar una solicitud. |
 | GET | /api/users | Listar usuarios. |
 | GET | /api/users?role=student | Filtrar usuarios por rol de BD. |
 | GET | /api/users/:id | Consultar usuario. |
@@ -526,7 +588,8 @@ Importante: las rutas no tienen guards completos por rol. El sidebar se presenta
 
 | Método | Endpoint | Uso |
 |---|---|---|
-| POST | /api/upload | Subir PDF a MinIO. |
+| POST | /api/upload | Subir un documento a MinIO. |
+| GET | /api/submission-documents/:id | Obtener URL firmada de un documento de investigación. |
 | GET | /api/documents/:id | URL firmada temporal. |
 | GET | /api/documents/:id/raw | Transmitir PDF. |
 | GET | /api/submissions | Listar entregas. |
@@ -535,6 +598,29 @@ Importante: las rutas no tienen guards completos por rol. El sidebar se presenta
 | POST | /api/submissions | Crear entrega. |
 | PATCH | /api/submissions/:id | Actualizar entrega. |
 | DELETE | /api/submissions/:id | Eliminar entrega. |
+
+### Estratificación y anexos
+
+| Método | Endpoint | Uso |
+|---|---|---|
+| GET | /api/stratifications | Listar investigaciones asignadas al evaluador. |
+| PATCH | /api/stratifications/:id/annex-11 | Guardar información del Anexo 11. |
+| POST | /api/stratifications/:id/conflict | Registrar conflicto o ausencia de conflicto mediante el Anexo 23. |
+| PATCH | /api/stratifications/:id | Completar el Anexo 27 y clasificar sin riesgo. |
+| GET | /api/annexes/:id/document | Obtener URL firmada del DOCX generado. |
+| GET | /api/admin/research | Listar investigaciones para administración. |
+| PATCH | /api/admin/research/:id/reassign | Reasignar miembro CEISH antes del dictamen. |
+| PATCH | /api/admin/research/:id/cancel | Cancelar una investigación. |
+
+### Calificación sin riesgo
+
+| Método | Endpoint | Uso |
+|---|---|---|
+| GET | /api/qualifications | Listar casos del evaluador. |
+| PATCH | /api/qualifications/:id/review | Aprobar o solicitar correcciones. |
+| PATCH | /api/qualifications/:id/cancel | Cancelar un caso de calificación. |
+| POST | /api/qualifications/:id/corrections | Enviar el informe de correcciones. |
+| GET | /api/qualification-corrections/:id | Obtener URL del informe de correcciones. |
 
 ### Asignaciones
 
@@ -600,11 +686,13 @@ docker-compose.yml levanta:
 
 ### MinIO
 
-- Imagen minio/minio:latest.
+- Imagen quay.io/minio/minio:latest.
 - API S3 en 9000.
 - Consola web en 9001.
 - Credenciales por defecto minioadmin / minioadmin.
 - Bucket por defecto documents.
+
+Las migraciones incrementales están en `database/migrations/` y se aplican con `node scripts/migrate.mjs` sobre una base ya existente. `schema.sql` y `seed.sql` se ejecutan automáticamente solo cuando PostgreSQL inicia con un volumen vacío.
 
 ### Persistencia
 
@@ -631,6 +719,7 @@ Otros comandos:
     npm run build
     npm run lint
     npx tsc -b
+    node scripts/migrate.mjs
     docker compose down
     docker compose down -v
 
@@ -668,6 +757,12 @@ El seed crea:
 | María López | Estudiante | maria@ceish.edu | demo123 |
 | Carlos Ruiz | Estudiante | carlos@ceish.edu | demo123 |
 
+También existen seis miembros CEISH de prueba para validar selección, conflictos y consenso:
+
+| Usuarios | Rol | Contraseña |
+|---|---|---|
+| miembro@ceish.edu, miembro01@ceish.edu … miembro06@ceish.edu | Evaluador/miembro CEISH | demo123 |
+
 El profesor demo tiene asignados a los tres estudiantes.
 
 Juan tiene una entrega con:
@@ -680,24 +775,20 @@ Juan tiene una entrega con:
 - Criterios evaluados en etapa 1.
 - Una anotación en página 2.
 
-El document_path del seed apunta a un objeto de ejemplo que no se incluye físicamente en MinIO. El PDF de Juan puede fallar hasta cargar un documento real.
+El `document_path` del seed apunta a un objeto de ejemplo que no se incluye físicamente en MinIO. El PDF de Juan puede fallar hasta cargar un documento real. Los documentos DOCX generados para anexos se crean cuando se registra o actualiza la información correspondiente y requieren que MinIO esté disponible.
 
 ## 18. Riesgos y pendientes técnicos
 
-1. Autorización insuficiente: los endpoints no exigen una sesión server-side ni validan propietario, rol o asignación.
-2. Contraseñas inseguras: se almacenan y comparan en texto plano.
-3. Sesión no persistente: el usuario se pierde al recargar.
-4. Rutas sin protección completa: AppShell controla navegación visual, pero no es una política de seguridad.
-5. Reglas de etapas en cliente: el backend acepta avances sin comprobar criterios pendientes.
-6. Anotaciones incompletas: se guarda página, pero no una región real del PDF.
-7. Archivos huérfanos: reemplazar o borrar una entrega no elimina necesariamente el objeto anterior en MinIO.
-8. Múltiples entregas: la BD permite varias por estudiante, aunque la UI muestra normalmente solo la más reciente.
-9. Seed desalineado: la plantilla actual tiene tres criterios para Metodología, pero el seed de esa etapa contiene dos.
-10. Servicios duplicados: existen servicios específicos y platformService; el flujo principal usa principalmente platformService.
-11. No hay pruebas automatizadas configuradas.
-12. docs/database-design.md menciona tablas y campos futuros que no existen en el esquema actual.
-13. Al guardar la referencia de página se usa una anotación con coordenadas 0,0,0,0.
-14. La revisión existente se devuelve aunque se solicite con otro evaluatorId; no hay comprobación de propietario.
+1. La autorización server-side debe seguir ampliándose y cubrir cada nueva operación por rol, propietario y asignación.
+2. No hay historial de auditoría completo para cambios administrativos y decisiones.
+3. El almacenamiento de documentos no implementa todavía limpieza garantizada de objetos huérfanos al reemplazar o retirar una investigación.
+4. La revisión PDF legacy y el nuevo flujo de investigación conviven; el módulo `/evaluacion` mantiene comportamiento de prototipo.
+5. Las reglas de criterios y transiciones deben seguir validándose en backend, especialmente para revisiones de cuatro etapas.
+6. Las anotaciones visuales del PDF siguen limitadas: algunas referencias de página no representan una región real.
+7. No hay pruebas automatizadas configuradas.
+8. docs/database-design.md todavía describe partes de una arquitectura futura y debe mantenerse alineado con el esquema actual.
+9. Las plantillas DOCX dependen de `unzip`, `zip` y de la estructura interna de los archivos institucionales.
+10. El seed y las migraciones contienen credenciales demo; nunca deben reutilizarse en producción.
 
 ## 19. Guía para modificar el sistema
 
@@ -708,6 +799,23 @@ Revisar:
 - src/features/student/SubmissionPage.tsx.
 - src/features/student/components/UploadModal.tsx.
 - src/features/student/components/SubmissionCard.tsx.
+- src/services/submissions.ts.
+- src/services/storage.ts.
+- src/server/queries/submissions.ts.
+
+La entrega actual es una investigación con título y documentos DOC/DOCX. Al crear o actualizar una investigación se regenera el Anexo 11 si existe la información necesaria.
+
+### Flujo de anexos
+
+Revisar:
+
+- src/features/evaluator/StratificationDashboard.tsx.
+- src/server/queries/stratifications.ts.
+- src/server/queries/annexes.ts.
+- src/server/annexDocuments.ts.
+- public/annex-templates/.
+
+Los cambios en los formularios de anexos regeneran el DOCX correspondiente y lo guardan en MinIO. Si se agregan campos a un anexo, deben actualizarse la interfaz, la consulta, la plantilla y la función de reemplazo XML.
 - src/services/submissions.ts.
 - src/services/storage.ts.
 - src/server/queries/submissions.ts.
@@ -760,16 +868,16 @@ No se debe poner SQL dentro de componentes ni importar módulos server-only en c
 
 ## 20. Recorrido recomendado de prueba
 
-1. Levantar PostgreSQL y MinIO con docker compose up -d.
+1. Levantar PostgreSQL y MinIO con `docker compose up -d`.
 2. Arrancar Vite con npm run dev.
-3. Entrar como admin@ceish.edu y revisar asignaciones.
-4. Entrar como juan@ceish.edu y cargar un PDF real menor a 15 MB.
-5. Entrar como profesor@ceish.edu.
-6. Abrir la entrega de Juan.
-7. Evaluar criterios, agregar observación y referencia de página.
-8. Guardar y avanzar por las etapas.
-9. Finalizar con calificación y comentario.
-10. Volver como Juan y comprobar estado, nota y comentario final.
+3. Entrar como `admin@ceish.edu` y revisar solicitudes e investigaciones.
+4. Entrar como `juan@ceish.edu` y registrar una investigación con documentos Word menores a 15 MB.
+5. Entrar como `miembro@ceish.edu` o `miembro01@ceish.edu`.
+6. Abrir `/evaluador/estratificacion`, completar el Anexo 11 y declarar el Anexo 23.
+7. Si aplica, completar los ocho indicadores del Anexo 27 y descargar el DOCX generado.
+8. Verificar como investigador los documentos y anexos en `/estudiante`.
+9. Probar `/evaluador/calificacion` para una investigación sin riesgo y enviar correcciones como investigador.
+10. Probar `/evaluador/revision/:submissionId` para el flujo de revisión por etapas.
 
 Endpoints útiles:
 
@@ -779,15 +887,15 @@ Endpoints útiles:
 
 ## 21. Resumen
 
-CEISH Platform conecta tres actores alrededor de una entrega académica:
+CEISH Platform conecta tres actores alrededor de una investigación:
 
     Administrador
-        -> asigna estudiantes a evaluadores
+        -> aprueba registros, supervisa investigaciones y asigna miembros CEISH
 
-    Estudiante
-        -> carga y consulta su PDF
+    Investigador
+        -> registra documentos, consulta anexos y responde observaciones
 
     Evaluador
-        -> revisa el PDF por etapas y emite el resultado
+        -> declara conflicto, estratifica riesgo, califica y revisa
 
-Los metadatos y la evaluación están en PostgreSQL; el archivo PDF está en MinIO. La UI actual es un prototipo institucional funcional. Antes de producción hay que implementar autenticación segura, autorización server-side, validación estricta de transiciones, limpieza de archivos y auditoría.
+Los metadatos, decisiones y anexos están en PostgreSQL; los documentos de investigación, correcciones y anexos DOCX están en MinIO. El sistema ya cuenta con autenticación, autorización básica por rol y generación de anexos; antes de producción deben reforzarse auditoría, pruebas automatizadas, limpieza de archivos y validación exhaustiva de transiciones.
