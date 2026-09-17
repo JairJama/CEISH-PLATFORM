@@ -39,8 +39,22 @@ async function apiSend<T>(method: string, path: string, body?: unknown): Promise
 interface UserDTO { id: string; name: string; email: string; role: string }
 interface SubmissionDTO {
   id: string; student_id: string; document_name: string; document_path: string | null;
+  research_code: string; title: string;
   comment: string; status: string; submitted_at: string;
   reviewed_at: string | null; grade: number | null; final_comment: string | null;
+  classification_status: StudentSubmission['classificationStatus'];
+  risk_level: StudentSubmission['riskLevel'] | null;
+  classified_at: string | null;
+  qualification_id: string | null;
+  qualification_status: StudentSubmission['qualificationStatus'] | null;
+  qualification_cycle: number | null;
+  qualification_observations: string | null;
+  correction_due_at: string | null;
+  documents: Array<{
+    id: string; document_name: string; mime_type: string;
+    size_bytes: number | string; uploaded_at: string;
+  }>;
+  annex_11_status: string | null;
 }
 interface AssignmentDTO {
   id: string; teacher_id: string; student_id: string; created_at: string;
@@ -76,13 +90,31 @@ function mapSubmission(d: SubmissionDTO): StudentSubmission {
   return {
     id: d.id,
     studentId: d.student_id,
+    researchCode: d.research_code,
+    title: d.title,
     documentName: d.document_name,
+    documents: d.documents.map((document) => ({
+      id: document.id,
+      name: document.document_name,
+      mimeType: document.mime_type,
+      sizeBytes: Number(document.size_bytes),
+      uploadedAt: document.uploaded_at,
+    })),
+    annex11Status: d.annex_11_status ?? undefined,
     comment: d.comment,
     status: mapSubStatus(d.status),
     submittedAt: d.submitted_at,
     reviewedAt: d.reviewed_at ?? undefined,
     grade: num(d.grade),
     finalComment: d.final_comment ?? undefined,
+    classificationStatus: d.classification_status,
+    riskLevel: d.risk_level ?? undefined,
+    classifiedAt: d.classified_at ?? undefined,
+    qualificationId: d.qualification_id ?? undefined,
+    qualificationStatus: d.qualification_status ?? undefined,
+    qualificationCycle: d.qualification_cycle ?? undefined,
+    qualificationObservations: d.qualification_observations ?? undefined,
+    correctionDueAt: d.correction_due_at ?? undefined,
   };
 }
 
@@ -171,24 +203,38 @@ export const platformService = {
 
   async createSubmission(
     studentId: string,
-    documentName: string,
+    title: string,
     comment: string,
-    documentPath: string | null = null,
+    documents: Array<{
+      documentName: string;
+      documentPath: string;
+      mimeType: string;
+      sizeBytes: number;
+    }>,
   ): Promise<StudentSubmission> {
     const data = await apiSend<SubmissionDTO>('POST', '/api/submissions', {
-      studentId, documentName, comment, documentPath,
+      studentId, title, comment, documents,
     });
     return mapSubmission(data);
   },
 
   async updateSubmission(
     id: string,
-    patch: { documentName?: string; comment?: string; documentPath?: string },
+    patch: {
+      title?: string;
+      comment?: string;
+      documents?: Array<{
+        documentName: string;
+        documentPath: string;
+        mimeType: string;
+        sizeBytes: number;
+      }>;
+    },
   ): Promise<StudentSubmission> {
     const data = await apiSend<SubmissionDTO>('PATCH', `/api/submissions/${id}`, {
-      documentName: patch.documentName,
+      title: patch.title,
       comment: patch.comment,
-      documentPath: patch.documentPath,
+      documents: patch.documents,
     });
     return mapSubmission(data);
   },

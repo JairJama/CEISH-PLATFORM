@@ -1,10 +1,10 @@
 // ============================================================================
-// Cliente de MinIO (object storage para documentos PDF).
+// Cliente de MinIO (object storage para documentos de investigación).
 //
 // IMPORTANTE: se ejecuta ÚNICAMENTE del lado del servidor (proceso Node del dev
 // server de Vite), nunca en el navegador. El navegador solo recibe URLs firmadas.
 //
-// Los PDF se guardan como objetos en el bucket "documents"; PostgreSQL almacena
+// Los archivos se guardan como objetos en el bucket "documents"; PostgreSQL almacena
 // únicamente la clave del objeto (document_path).
 // ============================================================================
 
@@ -42,12 +42,21 @@ export function ensureBucket(): Promise<void> {
   return bucketReady;
 }
 
-/** Sube un PDF y devuelve la clave del objeto almacenado. */
-export async function uploadPdf(buffer: Buffer, originalName: string): Promise<string> {
+function safeExtension(originalName: string): string {
+  const match = originalName.toLowerCase().match(/\.(docx?|pdf)$/);
+  return match?.[0] ?? '';
+}
+
+/** Sube un documento y devuelve la clave del objeto almacenado. */
+export async function uploadDocument(
+  buffer: Buffer,
+  originalName: string,
+  mimeType: string,
+): Promise<string> {
   await ensureBucket();
-  const key = `documents/${randomUUID()}.pdf`;
+  const key = `documents/${randomUUID()}${safeExtension(originalName)}`;
   await getMinio().putObject(BUCKET, key, buffer, buffer.length, {
-    'Content-Type': 'application/pdf',
+    'Content-Type': mimeType,
     'X-Amz-Meta-Original-Name': encodeURIComponent(originalName),
   });
   return key;

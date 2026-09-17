@@ -159,3 +159,109 @@
   justify-content: center;
   overflow: hidden;
 }
+
+/* ---- Risk stratification ---- */
+.stratification-list { display: flex; flex-direction: column; gap: 12px; }
+.stratification-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+}
+.stratification-card__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.stratification-card__header h2 { margin-top: 3px; font-size: 15px; color: var(--c-text); }
+.stratification-card__header p { margin-top: 3px; font-size: 12px; color: var(--c-text-muted); }
+.stratification-card__round { font-size: 10px; font-weight: 700; color: var(--c-primary); text-transform: uppercase; letter-spacing: .08em; }
+.stratification-card__previous,
+.stratification-card__result { padding: 11px 12px; border-radius: var(--r-md); background: var(--c-surface-2); font-size: 13px; color: var(--c-text-2); }
+.stratification-card__result { background: var(--c-success-bg); border: 1px solid var(--c-success-border); color: var(--c-success-text); }
+.stratification-card__form { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
+.stratification-card__form fieldset { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; }
+.stratification-card__form legend { width: 100%; margin-bottom: 4px; font-size: 11px; font-weight: 700; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: .06em; }
+.stratification-card__form label { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--c-border); border-radius: var(--r-md); font-size: 12px; color: var(--c-text-2); cursor: pointer; }
+.stratification-card__message { font-size: 12px; color: var(--c-text-muted); }
+.stratification-card__document { align-self: flex-start; }
+.workflow-alert { padding: 11px 14px; border-radius: var(--r-md); font-size: 13px; }
+.workflow-alert--error { color: var(--c-danger); background: var(--c-danger-bg); border: 1px solid var(--c-danger-border); }
+
+.annex-timeline { display: flex; flex-wrap: wrap; gap: 7px; }
+.annex-timeline span { padding: 5px 9px; border: 1px solid var(--c-border); border-radius: 999px; color: var(--c-text-muted); background: var(--c-surface-2); font-size: 10px; font-weight: 700; }
+.annex-timeline .annex-timeline__done { border-color: var(--c-success-border); color: var(--c-success-text); background: var(--c-success-bg); }
+
+.stratification-documents { padding: 12px 14px; border: 1px solid var(--c-border); border-radius: var(--r-md); }
+.stratification-documents > div { display: flex; justify-content: space-between; gap: 12px; color: var(--c-text-2); font-size: 12px; }
+.stratification-documents > div span { color: var(--c-text-muted); }
+.stratification-documents ul { display: flex; flex-direction: column; gap: 7px; margin-top: 9px; list-style: none; }
+.stratification-documents li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 7px; border-top: 1px solid var(--c-border); }
+.stratification-documents li span { overflow: hidden; color: var(--c-text-2); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.stratification-documents .eval-btn { flex-shrink: 0; padding: 5px 9px; }
+
+.annex-form { display: flex; flex-direction: column; align-items: flex-start; gap: 13px; padding: 16px; border: 1px solid var(--c-primary-border); border-radius: var(--r-lg); background: color-mix(in srgb, var(--c-primary-light) 45%, var(--c-surface)); }
+.annex-form__heading { display: flex; align-items: flex-start; gap: 11px; }
+.annex-form__heading > span { flex-shrink: 0; padding: 5px 8px; border-radius: var(--r-sm); color: white; background: var(--c-primary); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.annex-form__heading h3 { color: var(--c-text); font-size: 14px; }
+.annex-form__heading p { margin-top: 3px; color: var(--c-text-muted); font-size: 11px; }
+.annex-form fieldset { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; padding: 0; border: 0; }
+.annex-form legend { width: 100%; margin-bottom: 6px; color: var(--c-text-2); font-size: 12px; font-weight: 700; }
+.annex-form fieldset label { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--c-border); border-radius: var(--r-md); color: var(--c-text-2); background: var(--c-surface); font-size: 12px; }
+.annex-form__field { display: flex; flex-direction: column; gap: 5px; width: min(100%, 680px); color: var(--c-text-muted); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.annex-form__field input, .annex-form__field textarea, .annex-criterion > input { width: 100%; padding: 9px 11px; border: 1px solid var(--c-border); border-radius: var(--r-md); color: var(--c-text); background: var(--c-surface); font: inherit; font-size: 12px; letter-spacing: normal; outline: none; text-transform: none; }
+.annex-form__field input:focus, .annex-form__field textarea:focus, .annex-criterion > input:focus { border-color: var(--c-primary); box-shadow: 0 0 0 3px var(--c-primary-light); }
+.annex-form__field textarea { resize: vertical; }
+.annex-form__declaration { max-width: 760px; color: var(--c-text-muted); font-size: 11px; line-height: 1.5; }
+.annex-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; width: 100%; }
+.annex-form__grid .annex-form__field { width: 100%; }
+.annex-form__field--full { grid-column: 1 / -1; }
+.annex-criteria { width: 100%; overflow: hidden; border: 1px solid var(--c-border); border-radius: var(--r-md); background: var(--c-surface); }
+.annex-criteria__header { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; color: var(--c-text-2); background: var(--c-surface-2); font-size: 11px; }
+.annex-criteria__header span { color: var(--c-text-muted); }
+.annex-criterion { display: grid; grid-template-columns: minmax(240px, 1.6fr) auto minmax(180px, 1fr); align-items: center; gap: 12px; padding: 10px 12px; border-top: 1px solid var(--c-border); }
+.annex-criterion p { color: var(--c-text-2); font-size: 11px; line-height: 1.45; }
+.annex-criterion__decision { display: flex; gap: 7px; }
+.annex-criterion__decision label { display: flex; align-items: center; gap: 4px; color: var(--c-text-muted); font-size: 11px; }
+.annex-form__conclusion { width: 100%; padding: 11px 13px; border: 1px solid var(--c-success-border); border-radius: var(--r-md); color: var(--c-success-text); background: var(--c-success-bg); font-size: 12px; }
+.annex-editor { width: 100%; border: 1px solid var(--c-border); border-radius: var(--r-md); background: var(--c-surface); }
+.annex-editor summary { padding: 10px 13px; color: var(--c-primary); font-size: 11px; font-weight: 700; cursor: pointer; }
+.annex-editor[open] summary { border-bottom: 1px solid var(--c-border); }
+.annex-form--compact { border: 0; border-radius: 0 0 var(--r-md) var(--r-md); background: var(--c-surface-2); }
+
+@media (max-width: 760px) {
+  .stratification-card__form { align-items: stretch; flex-direction: column; }
+  .stratification-card__form .eval-btn { width: 100%; }
+  .annex-form__grid { grid-template-columns: 1fr; }
+  .annex-form__field--full { grid-column: auto; }
+  .annex-criterion { grid-template-columns: 1fr; }
+}
+
+/* ---- No-risk qualification ---- */
+.qualification-list { display: flex; flex-direction: column; gap: 14px; }
+.qualification-card {
+  display: flex; flex-direction: column; gap: 14px; padding: 18px;
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xl);
+}
+.qualification-card__header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.qualification-card__header h2 { margin-top: 3px; font-size: 15px; color: var(--c-text); }
+.qualification-card__header p { margin-top: 3px; font-size: 12px; color: var(--c-text-muted); }
+.qualification-card__cycle { font-size: 10px; font-weight: 700; color: var(--c-primary); text-transform: uppercase; letter-spacing: .08em; }
+.qualification-card__notice { display: flex; flex-direction: column; gap: 5px; padding: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--r-md); font-size: 13px; color: #92400e; }
+.qualification-card__notice span { font-size: 11px; }
+.qualification-card__correction { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px; background: var(--c-primary-light); border: 1px solid var(--c-primary-border); border-radius: var(--r-md); }
+.qualification-card__correction div { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--c-text-2); }
+.qualification-card__correction span { font-size: 12px; color: var(--c-text-muted); }
+.qualification-card__form { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.qualification-card__form fieldset { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; }
+.qualification-card__form legend { width: 100%; margin-bottom: 5px; font-size: 12px; font-weight: 700; color: var(--c-text-2); }
+.qualification-card__form fieldset label { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--c-border); border-radius: var(--r-md); font-size: 12px; color: var(--c-text-2); }
+.qualification-card__observations { display: flex; flex-direction: column; gap: 5px; width: min(100%, 680px); font-size: 11px; font-weight: 700; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: .06em; }
+.qualification-card__observations textarea { width: 100%; padding: 10px 12px; resize: vertical; border: 1px solid var(--c-border); border-radius: var(--r-md); color: var(--c-text); font: inherit; line-height: 1.5; text-transform: none; letter-spacing: normal; }
+.qualification-card__observations textarea:focus { outline: 2px solid var(--c-primary-border); border-color: var(--c-primary); }
+.qualification-card__actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; border-top: 1px solid var(--c-border); }
+.qualification-card__message { font-size: 12px; color: var(--c-text-muted); }
+
+@media (max-width: 640px) {
+  .qualification-card__header, .qualification-card__correction { align-items: stretch; flex-direction: column; }
+}

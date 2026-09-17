@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { logout as logoutSession } from '../../services/authService';
 import { useAuthStore } from '../../store/authStore';
 import { cn } from '../../utils/cn';
 import '../styles/platform.css';
@@ -23,6 +24,26 @@ const STUDENT_NAV: NavItem[] = [
 ];
 
 const EVALUATOR_NAV: NavItem[] = [
+  {
+    to: '/evaluador/estratificacion',
+    label: 'Estratificación',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M9 2l6 3v4c0 3.7-2.5 6-6 7-3.5-1-6-3.3-6-7V5l6-3z" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6.5 9l1.6 1.6 3.4-3.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    to: '/evaluador/calificacion',
+    label: 'Calificación',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M4 2h10v14H4V2z" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6.5 6h5M6.5 9h5M6.5 12h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
   {
     to: '/evaluador',
     label: 'Mis estudiantes',
@@ -49,6 +70,26 @@ const ADMIN_NAV: NavItem[] = [
     ),
   },
   {
+    to: '/admin/solicitudes',
+    label: 'Solicitudes',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M4 2h7l3 3v11H4V2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d="M11 2v3h3M6.5 9h5M6.5 12h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    to: '/admin/investigaciones',
+    label: 'Investigaciones',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="3" y="2" width="12" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6 6h6M6 9h6M6 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     to: '/admin/asignaciones',
     label: 'Asignaciones',
     icon: (
@@ -60,20 +101,20 @@ const ADMIN_NAV: NavItem[] = [
 ];
 
 const ROLE_NAV = { student: STUDENT_NAV, evaluator: EVALUATOR_NAV, admin: ADMIN_NAV };
-const ROLE_LABEL = { student: 'Estudiante', evaluator: 'Evaluador', admin: 'Administrador' };
+const ROLE_LABEL = { student: 'Investigador', evaluator: 'Estratificador CEISH', admin: 'Administrador' };
 
 export function AppShell() {
   const { currentUser, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logoutSession();
     logout();
     navigate('/login', { replace: true });
   };
 
   if (!currentUser) {
-    navigate('/login', { replace: true });
-    return null;
+    return <Navigate to="/login" replace />;
   }
 
   const navItems = ROLE_NAV[currentUser.role];

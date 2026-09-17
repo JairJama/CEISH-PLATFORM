@@ -14,16 +14,38 @@ export const submissionsService = {
     return platformService.getSubmissionForStudent(studentId);
   },
 
-  /** Sube el PDF y crea la entrega con su referencia. */
-  async createWithDocument(studentId: string, file: File, comment: string): Promise<StudentSubmission> {
-    const { documentPath, documentName } = await storageService.uploadDocument(file);
-    return platformService.createSubmission(studentId, documentName, comment, documentPath);
+  /** Sube el conjunto documental y crea la investigación. */
+  async createWithDocuments(
+    studentId: string,
+    title: string,
+    files: File[],
+    comment: string,
+  ): Promise<StudentSubmission> {
+    const uploaded = await Promise.all(files.map((file) => storageService.uploadDocument(file)));
+    const documents = uploaded.map((document) => ({
+      documentName: document.documentName,
+      documentPath: document.documentPath,
+      mimeType: document.mimeType,
+      sizeBytes: document.size,
+    }));
+    return platformService.createSubmission(studentId, title, comment, documents);
   },
 
-  /** Sube el nuevo PDF y actualiza la entrega existente. */
-  async updateWithDocument(id: string, file: File, comment: string): Promise<StudentSubmission> {
-    const { documentPath, documentName } = await storageService.uploadDocument(file);
-    return platformService.updateSubmission(id, { documentName, comment, documentPath });
+  /** Reemplaza el conjunto documental de una investigación aún no revisada. */
+  async updateWithDocuments(
+    id: string,
+    title: string,
+    files: File[],
+    comment: string,
+  ): Promise<StudentSubmission> {
+    const uploaded = await Promise.all(files.map((file) => storageService.uploadDocument(file)));
+    const documents = uploaded.map((document) => ({
+      documentName: document.documentName,
+      documentPath: document.documentPath,
+      mimeType: document.mimeType,
+      sizeBytes: document.size,
+    }));
+    return platformService.updateSubmission(id, { title, comment, documents });
   },
 
   /** Solo actualiza el comentario, sin tocar el documento. */
@@ -38,5 +60,9 @@ export const submissionsService = {
   /** URL temporal para visualizar el documento. */
   getDocumentUrl(id: string): Promise<string> {
     return storageService.getDocumentUrl(id);
+  },
+
+  getResearchDocumentUrl(documentId: string): Promise<string> {
+    return storageService.getResearchDocumentUrl(documentId);
   },
 };

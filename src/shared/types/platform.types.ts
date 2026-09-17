@@ -10,17 +10,52 @@ export interface User {
 }
 
 export type SubmissionStatus = 'pending' | 'under-review' | 'reviewed';
+export type ClassificationStatus =
+  | 'awaiting-assignment'
+  | 'awaiting-first'
+  | 'awaiting-second'
+  | 'awaiting-consensus'
+  | 'classified'
+  | 'cancelled';
+export type RiskLevel = 'no-risk' | 'minimal-risk' | 'greater-than-minimal';
+export type QualificationStatus =
+  | 'pending-review'
+  | 'corrections-required'
+  | 'resubmitted'
+  | 'approved'
+  | 'cancelled'
+  | 'expired';
+
+export interface ResearchDocument {
+  id: string;
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+}
 
 export interface StudentSubmission {
   id: string;
   studentId: string;
+  researchCode: string;
+  title: string;
   documentName: string;
+  documents: ResearchDocument[];
+  annex11Status?: string;
   comment: string;
   status: SubmissionStatus;
   submittedAt: string;
   reviewedAt?: string;
   grade?: number;
   finalComment?: string; // shown anonymously to student
+  classificationStatus: ClassificationStatus;
+  riskLevel?: RiskLevel;
+  classifiedAt?: string;
+  qualificationId?: string;
+  qualificationStatus?: QualificationStatus;
+  qualificationCycle?: number;
+  qualificationObservations?: string;
+  correctionDueAt?: string;
 }
 
 export type StageStatus = 'pending' | 'in-progress' | 'completed';

@@ -23,7 +23,7 @@ services:
 
   # ── Object storage para los documentos PDF ──────────────────────────────────
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     container_name: ceish_minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -43,7 +43,7 @@ services:
 
   # ── Init: crea el bucket "documents" una sola vez ───────────────────────────
   minio-init:
-    image: minio/mc:latest
+    image: quay.io/minio/mc:latest
     container_name: ceish_minio_init
     depends_on:
       minio:

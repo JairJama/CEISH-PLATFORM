@@ -238,6 +238,21 @@ export interface SaveReviewInput {
 }
 
 export async function saveReview(input: SaveReviewInput): Promise<void> {
+  for (const stage of input.stages) {
+    if (stage.status === 'completed' && stage.criteria.some((criterion) => criterion.status === 'pending')) {
+      throw new Error(`No se puede completar la etapa ${stage.stageNumber} mientras existan criterios pendientes`);
+    }
+  }
+  if (input.status === 'completed') {
+    const allStagesCompleted = input.stages.length === STAGE_TEMPLATE.length
+      && input.stages.every((stage) => stage.status === 'completed');
+    const allCriteriaResolved = input.stages.every((stage) => stage.criteria.every((criterion) => criterion.status !== 'pending'));
+    const validGrade = typeof input.grade === 'number' && Number.isFinite(input.grade) && input.grade >= 0 && input.grade <= 10;
+    if (!allStagesCompleted || !allCriteriaResolved || !validGrade || !input.comment.trim()) {
+      throw new Error('Completa todas las etapas y criterios, e ingresa calificación y comentario final antes de finalizar');
+    }
+  }
+
   await query(
     `UPDATE reviews SET comment = $2, grade = $3, status = $4 WHERE id = $1`,
     [input.reviewId, input.comment, input.grade, input.status],
