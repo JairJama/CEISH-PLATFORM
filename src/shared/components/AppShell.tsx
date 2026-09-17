@@ -25,6 +25,16 @@ const STUDENT_NAV: NavItem[] = [
 
 const EVALUATOR_NAV: NavItem[] = [
   {
+    to: '/evaluador/estratificacion',
+    label: 'Estratificación',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M9 2l6 3v4c0 3.7-2.5 6-6 7-3.5-1-6-3.3-6-7V5l6-3z" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6.5 9l1.6 1.6 3.4-3.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     to: '/evaluador',
     label: 'Mis estudiantes',
     icon: (
@@ -50,6 +60,16 @@ const ADMIN_NAV: NavItem[] = [
     ),
   },
   {
+    to: '/admin/solicitudes',
+    label: 'Solicitudes',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M4 2h7l3 3v11H4V2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d="M11 2v3h3M6.5 9h5M6.5 12h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     to: '/admin/asignaciones',
     label: 'Asignaciones',
     icon: (
@@ -61,7 +81,7 @@ const ADMIN_NAV: NavItem[] = [
 ];
 
 const ROLE_NAV = { student: STUDENT_NAV, evaluator: EVALUATOR_NAV, admin: ADMIN_NAV };
-const ROLE_LABEL = { student: 'Estudiante', evaluator: 'Evaluador', admin: 'Administrador' };
+const ROLE_LABEL = { student: 'Investigador', evaluator: 'Estratificador CEISH', admin: 'Administrador' };
 
 export function AppShell() {
   const { currentUser, logout } = useAuthStore();

@@ -1,5 +1,6 @@
 // Consultas SQL del dominio de entregas (lado servidor).
-import { query } from '../../lib/database';
+import { randomInt } from 'node:crypto';
+import { query, withTransaction } from '../../lib/database';
 
 export interface SubmissionRow {
   id: string;
@@ -13,12 +14,16 @@ export interface SubmissionRow {
   reviewed_at: string | null;
   grade: number | null;
   final_comment: string | null;
+  classification_status: string;
+  risk_level: string | null;
+  classified_at: string | null;
 }
 
 const BASE_SELECT = `
   SELECT s.id, s.student_id, u.name AS student_name,
          s.document_name, s.document_path, s.comment, s.status,
-         s.submitted_at, s.reviewed_at, s.grade, s.final_comment
+         s.submitted_at, s.reviewed_at, s.grade, s.final_comment,
+         s.classification_status, s.risk_level, s.classified_at
     FROM submissions s
     JOIN users u ON u.id = s.student_id`;
 
@@ -47,13 +52,41 @@ export interface CreateSubmissionInput {
 }
 
 export async function createSubmission(input: CreateSubmissionInput): Promise<SubmissionRow> {
-  const rows = await query<{ id: string }>(
-    `INSERT INTO submissions (student_id, document_name, document_path, comment, status)
-     VALUES ($1, $2, $3, $4, 'pending')
-     RETURNING id`,
-    [input.studentId, input.documentName, input.documentPath, input.comment],
-  );
-  return (await getSubmissionById(rows[0].id))!;
+  const id = await withTransaction(async (client) => {
+    const created = await client.query<{ id: string }>(
+      `INSERT INTO submissions
+         (student_id, document_name, document_path, comment, status, classification_status)
+       VALUES ($1, $2, $3, $4, 'submitted', 'awaiting-assignment')
+       RETURNING id`,
+      [input.studentId, input.documentName, input.documentPath, input.comment],
+    );
+    const submissionId = created.rows[0].id;
+    const members = await client.query<{ id: string; active_count: string }>(
+      `SELECT u.id, COUNT(sa.id) FILTER (WHERE s.classification_status <> 'classified') AS active_count
+         FROM users u
+         JOIN roles r ON r.id = u.role_id
+         LEFT JOIN stratification_assignments sa ON sa.stratifier_id = u.id
+         LEFT JOIN submissions s ON s.id = sa.submission_id
+        WHERE r.name = 'teacher'
+        GROUP BY u.id`,
+    );
+    if (members.rows.length) {
+      const minimumLoad = Math.min(...members.rows.map((member) => Number(member.active_count)));
+      const available = members.rows.filter((member) => Number(member.active_count) === minimumLoad);
+      const selected = available[randomInt(available.length)];
+      await client.query(
+        `INSERT INTO stratification_assignments (submission_id, stratifier_id, round_number)
+         VALUES ($1, $2, 1)`,
+        [submissionId, selected.id],
+      );
+      await client.query(
+        `UPDATE submissions SET classification_status = 'awaiting-first' WHERE id = $1`,
+        [submissionId],
+      );
+    }
+    return submissionId;
+  });
+  return (await getSubmissionById(id))!;
 }
 
 export async function updateSubmission(

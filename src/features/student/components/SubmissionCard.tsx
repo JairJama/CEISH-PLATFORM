@@ -23,9 +23,25 @@ const STATUS_CONFIG = {
   reviewed: { label: 'Revisado', cls: 'badge--success' },
 } as const;
 
+const CLASSIFICATION_LABEL = {
+  'awaiting-assignment': 'Esperando asignación de un miembro CEISH',
+  'awaiting-first': 'Pendiente de primera estratificación',
+  'awaiting-second': 'Pendiente de segunda estratificación',
+  'awaiting-consensus': 'Los estratificadores están resolviendo el consenso',
+  classified: 'Clasificación de riesgo completada',
+} as const;
+
+const RISK_LABEL = {
+  'no-risk': 'Sin riesgo',
+  'minimal-risk': 'Riesgo mínimo',
+  'greater-than-minimal': 'Riesgo mayor al mínimo',
+} as const;
+
 export function SubmissionCard({ submission, onView, onEdit, onDelete }: Props) {
   const status = STATUS_CONFIG[submission.status];
   const isReviewed = submission.status === 'reviewed';
+  const canModify = submission.classificationStatus === 'awaiting-assignment'
+    || submission.classificationStatus === 'awaiting-first';
 
   return (
     <div className="submission-card">
@@ -50,6 +66,14 @@ export function SubmissionCard({ submission, onView, onEdit, onDelete }: Props) 
           <p className="submission-card__comment-text">{submission.comment}</p>
         </div>
       )}
+
+      <div className={`submission-card__classification ${submission.riskLevel ? 'submission-card__classification--done' : ''}`}>
+        <span className="submission-card__comment-label">Estado de estratificación</span>
+        <p>{CLASSIFICATION_LABEL[submission.classificationStatus]}</p>
+        {submission.riskLevel && (
+          <strong>Tu investigación ha sido clasificada como: {RISK_LABEL[submission.riskLevel]}</strong>
+        )}
+      </div>
 
       {isReviewed && (
         <div className="submission-card__result">
@@ -81,7 +105,7 @@ export function SubmissionCard({ submission, onView, onEdit, onDelete }: Props) 
           </svg>
           Ver documento
         </button>
-        {!isReviewed && (
+        {!isReviewed && canModify && (
           <>
             <button className="eval-btn eval-btn--outline" onClick={onEdit}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

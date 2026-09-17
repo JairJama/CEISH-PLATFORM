@@ -10,6 +10,13 @@ export interface User {
 }
 
 export type SubmissionStatus = 'pending' | 'under-review' | 'reviewed';
+export type ClassificationStatus =
+  | 'awaiting-assignment'
+  | 'awaiting-first'
+  | 'awaiting-second'
+  | 'awaiting-consensus'
+  | 'classified';
+export type RiskLevel = 'no-risk' | 'minimal-risk' | 'greater-than-minimal';
 
 export interface StudentSubmission {
   id: string;
@@ -21,6 +28,9 @@ export interface StudentSubmission {
   reviewedAt?: string;
   grade?: number;
   finalComment?: string; // shown anonymously to student
+  classificationStatus: ClassificationStatus;
+  riskLevel?: RiskLevel;
+  classifiedAt?: string;
 }
 
 export type StageStatus = 'pending' | 'in-progress' | 'completed';

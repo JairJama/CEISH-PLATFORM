@@ -41,6 +41,9 @@ interface SubmissionDTO {
   id: string; student_id: string; document_name: string; document_path: string | null;
   comment: string; status: string; submitted_at: string;
   reviewed_at: string | null; grade: number | null; final_comment: string | null;
+  classification_status: StudentSubmission['classificationStatus'];
+  risk_level: StudentSubmission['riskLevel'] | null;
+  classified_at: string | null;
 }
 interface AssignmentDTO {
   id: string; teacher_id: string; student_id: string; created_at: string;
@@ -83,6 +86,9 @@ function mapSubmission(d: SubmissionDTO): StudentSubmission {
     reviewedAt: d.reviewed_at ?? undefined,
     grade: num(d.grade),
     finalComment: d.final_comment ?? undefined,
+    classificationStatus: d.classification_status,
+    riskLevel: d.risk_level ?? undefined,
+    classifiedAt: d.classified_at ?? undefined,
   };
 }
 

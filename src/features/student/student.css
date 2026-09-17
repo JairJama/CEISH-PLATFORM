@@ -58,6 +58,25 @@
   line-height: 1.55;
 }
 
+.submission-card__classification {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 13px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--c-primary-border);
+  background: var(--c-primary-light);
+  color: var(--c-text-2);
+  font-size: 13px;
+}
+
+.submission-card__classification--done {
+  border-color: var(--c-success-border);
+  background: var(--c-success-bg);
+}
+
+.submission-card__classification strong { color: var(--c-success-text); }
+
 .submission-card__result {
   border-top: 1px solid var(--c-border);
   padding-top: 14px;

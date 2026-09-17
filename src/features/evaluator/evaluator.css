@@ -159,3 +159,36 @@
   justify-content: center;
   overflow: hidden;
 }
+
+/* ---- Risk stratification ---- */
+.stratification-list { display: flex; flex-direction: column; gap: 12px; }
+.stratification-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+}
+.stratification-card__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.stratification-card__header h2 { margin-top: 3px; font-size: 15px; color: var(--c-text); }
+.stratification-card__header p { margin-top: 3px; font-size: 12px; color: var(--c-text-muted); }
+.stratification-card__round { font-size: 10px; font-weight: 700; color: var(--c-primary); text-transform: uppercase; letter-spacing: .08em; }
+.stratification-card__previous,
+.stratification-card__result { padding: 11px 12px; border-radius: var(--r-md); background: var(--c-surface-2); font-size: 13px; color: var(--c-text-2); }
+.stratification-card__result { background: var(--c-success-bg); border: 1px solid var(--c-success-border); color: var(--c-success-text); }
+.stratification-card__form { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
+.stratification-card__form fieldset { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; }
+.stratification-card__form legend { width: 100%; margin-bottom: 4px; font-size: 11px; font-weight: 700; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: .06em; }
+.stratification-card__form label { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--c-border); border-radius: var(--r-md); font-size: 12px; color: var(--c-text-2); cursor: pointer; }
+.stratification-card__message { font-size: 12px; color: var(--c-text-muted); }
+.stratification-card__document { align-self: flex-start; }
+.workflow-alert { padding: 11px 14px; border-radius: var(--r-md); font-size: 13px; }
+.workflow-alert--error { color: var(--c-danger); background: var(--c-danger-bg); border: 1px solid var(--c-danger-border); }
+
+@media (max-width: 760px) {
+  .stratification-card__form { align-items: stretch; flex-direction: column; }
+  .stratification-card__form .eval-btn { width: 100%; }
+}

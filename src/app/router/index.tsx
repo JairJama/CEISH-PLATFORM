@@ -10,6 +10,8 @@ import { EvaluatorDashboard } from '../../features/evaluator/EvaluatorDashboard'
 import { ReviewPage } from '../../features/evaluator/components/ReviewPage';
 import { AdminDashboard } from '../../features/admin/AdminDashboard';
 import { AssignmentPanel } from '../../features/admin/components/AssignmentPanel';
+import { RegistrationRequestsPanel } from '../../features/admin/components/RegistrationRequestsPanel';
+import { StratificationDashboard } from '../../features/evaluator/StratificationDashboard';
 
 function RootRedirect() {
   const currentUser = useAuthStore((s) => s.currentUser);
@@ -17,7 +19,7 @@ function RootRedirect() {
   if (!isRestored) return null;
   if (!currentUser) return <Navigate to="/login" replace />;
   if (currentUser.role === 'student') return <Navigate to="/estudiante" replace />;
-  if (currentUser.role === 'evaluator') return <Navigate to="/evaluador" replace />;
+  if (currentUser.role === 'evaluator') return <Navigate to="/evaluador/estratificacion" replace />;
   return <Navigate to="/admin" replace />;
 }
 
@@ -47,8 +49,10 @@ export function AppRouter() {
         <Route element={<AppShell />}>
           <Route path="/estudiante" element={<RequireRole role="student"><SubmissionPage /></RequireRole>} />
           <Route path="/evaluador" element={<RequireRole role="evaluator"><EvaluatorDashboard /></RequireRole>} />
+          <Route path="/evaluador/estratificacion" element={<RequireRole role="evaluator"><StratificationDashboard /></RequireRole>} />
           <Route path="/admin" element={<RequireRole role="admin"><AdminDashboard /></RequireRole>} />
           <Route path="/admin/asignaciones" element={<RequireRole role="admin"><AssignmentPanel /></RequireRole>} />
+          <Route path="/admin/solicitudes" element={<RequireRole role="admin"><RegistrationRequestsPanel /></RequireRole>} />
         </Route>
 
         {/* Root redirect */}

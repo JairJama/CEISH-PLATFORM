@@ -20,7 +20,14 @@ import {
 } from './queries/assignments';
 import { getReviewBySubmission, getOrCreateReview, saveReview } from './queries/reviews';
 import { loginUser } from './queries/auth';
-import { createRegistrationRequest, type ResearcherType } from './queries/registrationRequests';
+import {
+  createRegistrationRequest, getRegistrationStatus, listRegistrationRequests,
+  reviewRegistrationRequest, type ResearcherType,
+} from './queries/registrationRequests';
+import {
+  hasStratificationAssignment, listStratificationTasks, saveStratificationDecision,
+  type RiskLevel,
+} from './queries/stratifications';
 import type { SaveReviewInput } from './queries/reviews';
 import { uploadPdf, getPresignedUrl, getObjectStream } from '../lib/minio';
 import { clearSession, getSession, setSession, type SessionUser } from './session';
@@ -54,7 +61,9 @@ async function canAccessSubmission(session: SessionUser, submissionId: string): 
   if (!submission) return false;
   if (session.role === 'admin') return true;
   if (session.role === 'student') return submission.student_id === session.id;
-  return (await listAssignmentsByTeacher(session.id)).some((assignment) => assignment.student_id === submission.student_id);
+  const hasReviewAssignment = (await listAssignmentsByTeacher(session.id))
+    .some((assignment) => assignment.student_id === submission.student_id);
+  return hasReviewAssignment || await hasStratificationAssignment(session.id, submissionId);
 }
 
 /** Lee y parsea el cuerpo JSON de la petición. */
@@ -112,6 +121,15 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
     }
     const user = await loginUser(String(b.email), String(b.password));
     if (!user) {
+      const requestStatus = await getRegistrationStatus(String(b.email));
+      if (requestStatus === 'pending') {
+        sendJson(res, 403, { error: 'Tu solicitud aún está pendiente de aprobación' });
+        return true;
+      }
+      if (requestStatus === 'rejected') {
+        sendJson(res, 403, { error: 'Tu solicitud de registro fue rechazada' });
+        return true;
+      }
       sendJson(res, 401, { error: 'Credenciales incorrectas' });
       return true;
     }
@@ -152,7 +170,7 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       sendJson(res, 409, { error: 'Ya existe una cuenta o una solicitud con este correo' });
       return true;
     }
-    sendJson(res, 201, { message: 'Solicitud enviada. Te notificaremos cuando sea revisada.' });
+    sendJson(res, 201, { message: 'Solicitud enviada. Podrás iniciar sesión cuando sea aprobada.' });
     return true;
   }
   if (path === '/api/auth/logout' && method === 'POST') {
@@ -165,6 +183,26 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
     if (!session) return true;
     const user = await getUserById(session.id);
     sendJson(res, user ? 200 : 401, user ? { ...user, role: user.role === 'teacher' ? 'evaluator' : user.role } : { error: 'La sesión ya no es válida' });
+    return true;
+  }
+
+  // ── Registration requests ───────────────────────────────────────────────
+  if (path === '/api/registration-requests' && method === 'GET') {
+    if (!requireRole(req, res, 'admin')) return true;
+    sendJson(res, 200, await listRegistrationRequests());
+    return true;
+  }
+  const registrationMatch = path.match(/^\/api\/registration-requests\/([^/]+)$/);
+  if (registrationMatch && method === 'PATCH') {
+    const session = requireRole(req, res, 'admin');
+    if (!session) return true;
+    const b = await readJsonBody(req);
+    if (b.decision !== 'approved' && b.decision !== 'rejected') {
+      sendJson(res, 400, { error: 'La decisión debe ser approved o rejected' });
+      return true;
+    }
+    const reviewed = await reviewRegistrationRequest(registrationMatch[1], b.decision, session.id);
+    sendJson(res, reviewed ? 200 : 409, reviewed ?? { error: 'La solicitud ya fue procesada o no existe' });
     return true;
   }
 
@@ -314,8 +352,8 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       return true;
     }
     const current = await getSubmissionById(subMatch[1]);
-    if (current?.status === 'reviewed') {
-      sendJson(res, 409, { error: 'No se puede modificar una entrega ya revisada' });
+    if (current && !['awaiting-assignment', 'awaiting-first'].includes(current.classification_status)) {
+      sendJson(res, 409, { error: 'No se puede modificar una entrega cuya estratificación ya comenzó' });
       return true;
     }
     const b = await readJsonBody(req);
@@ -334,8 +372,8 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       return true;
     }
     const current = await getSubmissionById(subMatch[1]);
-    if (current?.status === 'reviewed') {
-      sendJson(res, 409, { error: 'No se puede eliminar una entrega ya revisada' });
+    if (current && !['awaiting-assignment', 'awaiting-first'].includes(current.classification_status)) {
+      sendJson(res, 409, { error: 'No se puede eliminar una entrega cuya estratificación ya comenzó' });
       return true;
     }
     await deleteSubmission(subMatch[1]);
@@ -365,6 +403,44 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
     if (!requireRole(req, res, 'admin')) return true;
     await deleteAssignment(assignMatch[1]);
     sendJson(res, 200, { ok: true });
+    return true;
+  }
+
+  // ── Risk stratification ─────────────────────────────────────────────────
+  if (path === '/api/stratifications' && method === 'GET') {
+    const session = requireRole(req, res, 'evaluator');
+    if (!session) return true;
+    sendJson(res, 200, await listStratificationTasks(session.id));
+    return true;
+  }
+  const stratificationMatch = path.match(/^\/api\/stratifications\/([^/]+)$/);
+  if (stratificationMatch && method === 'PATCH') {
+    const session = requireRole(req, res, 'evaluator');
+    if (!session) return true;
+    const b = await readJsonBody(req);
+    const riskLevel = b.riskLevel;
+    const validRisk = riskLevel === 'no-risk' || riskLevel === 'minimal-risk' || riskLevel === 'greater-than-minimal';
+    if (!validRisk) {
+      sendJson(res, 400, { error: 'Selecciona un nivel de riesgo válido' });
+      return true;
+    }
+    const result = await saveStratificationDecision(
+      stratificationMatch[1], session.id, riskLevel as RiskLevel,
+    );
+    if (result === 'not-found') {
+      sendJson(res, 404, { error: 'Asignación no encontrada' });
+      return true;
+    }
+    if (result === 'closed') {
+      sendJson(res, 409, { error: 'Esta investigación ya fue clasificada' });
+      return true;
+    }
+    sendJson(res, 200, {
+      result,
+      message: result === 'unavailable'
+        ? 'Dictamen guardado; aún no hay otro miembro CEISH disponible'
+        : result === 'classified' ? 'Clasificación completada' : 'Dictamen guardado',
+    });
     return true;
   }
 

@@ -9,12 +9,11 @@ import './LoginForm.css';
 
 interface RegistrationFormProps {
   onSubmit: (request: RegistrationRequest) => Promise<RegistrationResult>;
-  onSuccess: () => void;
 }
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, onSuccess }) => {
+const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -62,7 +61,6 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, onSuccess
       return;
     }
     setSuccess(result.message ?? 'Solicitud enviada correctamente.');
-    window.setTimeout(onSuccess, 1800);
   };
 
   return (
@@ -72,7 +70,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, onSuccess
           Solicitud de registro
         </h1>
         <p className="login-form__subtitle" style={{ color: colors.gray[600], fontSize: typography.fontSize.sm, fontFamily: typography.fontFamily.body }}>
-          Regístrate como investigador interno o externo. Tu solicitud será revisada antes de habilitar el acceso.
+          Envía tus datos para que un administrador revise y habilite tu acceso.
         </p>
       </div>
 

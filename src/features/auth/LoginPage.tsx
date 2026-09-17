@@ -23,7 +23,7 @@ export const LoginPage: React.FC = () => {
       // Redirigir según rol (igual que hace RootRedirect)
       const routes: Record<string, string> = {
         student: '/estudiante',
-        evaluator: '/evaluador',
+        evaluator: '/evaluador/estratificacion',
         admin: '/admin',
       };
       navigate(routes[result.user.role] ?? '/');
@@ -38,4 +38,3 @@ export const LoginPage: React.FC = () => {
     </AuthLayout>
   );
 };
-

@@ -269,3 +269,42 @@
   background: var(--c-danger-bg);
   color: var(--c-danger);
 }
+
+/* ---- Registration requests ---- */
+.request-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.request-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(200px, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 18px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+}
+
+.request-card__identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.request-card__identity h2 { font-size: 14px; font-weight: 600; color: var(--c-text); }
+.request-card__identity p { font-size: 12px; color: var(--c-text-muted); margin-top: 2px; }
+.request-card__avatar {
+  display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0;
+  border-radius: 50%; background: #0369a1; color: #fff; font-weight: 700;
+}
+.request-card__details { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--c-text-muted); }
+.request-card__status--pending { background: #fffbeb; color: #b45309; }
+.request-card__status--approved { background: var(--c-success-bg); color: var(--c-success); }
+.request-card__status--rejected { background: var(--c-danger-bg); color: var(--c-danger); }
+.request-card__actions { display: flex; gap: 8px; }
+.workflow-alert { padding: 11px 14px; border-radius: var(--r-md); font-size: 13px; }
+.workflow-alert--error { color: var(--c-danger); background: var(--c-danger-bg); border: 1px solid var(--c-danger-border); }
+
+@media (max-width: 900px) {
+  .request-card { grid-template-columns: 1fr auto; }
+  .request-card__details { grid-column: 1 / -1; }
+  .request-card__actions { grid-column: 1 / -1; justify-content: flex-end; }
+}

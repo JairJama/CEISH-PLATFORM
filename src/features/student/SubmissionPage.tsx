@@ -58,7 +58,7 @@ export function SubmissionPage() {
       <div className="page__header">
         <div>
           <h1 className="page__title">Mi entrega</h1>
-          <p className="page__subtitle">Gestiona el documento de tu proyecto</p>
+          <p className="page__subtitle">Envía tu investigación y consulta su clasificación de riesgo</p>
         </div>
         {!submission && !loading && (
           <button className="eval-btn eval-btn--primary" onClick={() => setModalMode('create')}>
@@ -94,7 +94,7 @@ export function SubmissionPage() {
             </div>
             <h2 className="empty-state__title">Aún no has subido ningún documento</h2>
             <p className="empty-state__desc">
-              Cuando estés listo, sube tu proyecto para que pueda ser revisado por tu evaluador.
+              Cuando esté listo, sube tu documento para que un miembro del CEISH estratifique su nivel de riesgo.
             </p>
             <button className="eval-btn eval-btn--primary" onClick={() => setModalMode('create')}>
               Agregar documento

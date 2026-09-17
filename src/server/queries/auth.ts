@@ -33,6 +33,7 @@ export async function hashPassword(password: string): Promise<string> {
  * La contraseña se compara en Node contra el hash scrypt y nunca se devuelve.
  */
 export async function loginUser(email: string, password: string) {
+  const normalizedEmail = email.trim().toLowerCase();
   const rows = await query<{
     id: string;
     name: string;
@@ -45,7 +46,7 @@ export async function loginUser(email: string, password: string) {
        JOIN roles r ON r.id = u.role_id
       WHERE u.email = $1
       LIMIT 1`,
-    [email.trim().toLowerCase()],
+    [normalizedEmail],
   );
 
   const row = rows[0];

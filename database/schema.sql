@@ -44,10 +44,20 @@ CREATE TABLE registration_requests (
   affiliation     VARCHAR(180) NOT NULL DEFAULT '',
   status          VARCHAR(20) NOT NULL DEFAULT 'pending'
                     CHECK (status IN ('pending', 'approved', 'rejected')),
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  reviewed_at     TIMESTAMPTZ,
+  reviewed_by     UUID REFERENCES users(id)
 );
 
 CREATE INDEX idx_registration_requests_status ON registration_requests(status);
+
+CREATE TABLE researcher_profiles (
+  user_id         UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  researcher_type VARCHAR(20) NOT NULL
+                    CHECK (researcher_type IN ('internal', 'external')),
+  affiliation     VARCHAR(180) NOT NULL DEFAULT '',
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 -- ----------------------------------------------------------------------------
 -- submissions  (entrega de documentos)
@@ -63,11 +73,42 @@ CREATE TABLE submissions (
   submitted_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   reviewed_at   TIMESTAMPTZ,
   grade         NUMERIC(4,2) CHECK (grade >= 0 AND grade <= 10),
-  final_comment TEXT                                 -- retroalimentación anónima para el estudiante
+  final_comment TEXT,                                -- retroalimentación anónima para el estudiante
+  classification_status VARCHAR(30) NOT NULL DEFAULT 'awaiting-assignment'
+                  CHECK (classification_status IN (
+                    'awaiting-assignment', 'awaiting-first', 'awaiting-second',
+                    'awaiting-consensus', 'classified'
+                  )),
+  risk_level VARCHAR(30)
+                  CHECK (risk_level IN ('no-risk', 'minimal-risk', 'greater-than-minimal')),
+  classified_at TIMESTAMPTZ
 );
 
 CREATE INDEX idx_submissions_student ON submissions(student_id);
 CREATE INDEX idx_submissions_status  ON submissions(status);
+
+-- ----------------------------------------------------------------------------
+-- stratification_assignments
+-- Dictámenes de riesgo emitidos por miembros CEISH. Una entrega puede requerir
+-- uno o dos estratificadores según el primer nivel seleccionado.
+-- ----------------------------------------------------------------------------
+CREATE TABLE stratification_assignments (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  submission_id   UUID NOT NULL REFERENCES submissions(id) ON DELETE CASCADE,
+  stratifier_id   UUID NOT NULL REFERENCES users(id),
+  round_number    SMALLINT NOT NULL CHECK (round_number IN (1, 2)),
+  risk_level      VARCHAR(30)
+                    CHECK (risk_level IN ('no-risk', 'minimal-risk', 'greater-than-minimal')),
+  assigned_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  decided_at      TIMESTAMPTZ,
+  CONSTRAINT stratification_round_unique UNIQUE (submission_id, round_number),
+  CONSTRAINT stratification_member_unique UNIQUE (submission_id, stratifier_id)
+);
+
+CREATE INDEX idx_stratification_member
+  ON stratification_assignments(stratifier_id, decided_at);
+CREATE INDEX idx_stratification_submission
+  ON stratification_assignments(submission_id);
 
 -- ----------------------------------------------------------------------------
 -- assignments  (relación profesor - estudiante)
