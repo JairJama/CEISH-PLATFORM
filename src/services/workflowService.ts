@@ -5,6 +5,29 @@ export type RegistrationStatus = 'pending' | 'approved' | 'rejected';
 export type ResearcherType = 'internal' | 'external';
 export type RiskLevel = 'no-risk' | 'minimal-risk' | 'greater-than-minimal';
 
+export interface WorkflowDocument {
+  id: string;
+  document_name: string;
+  mime_type: string;
+  size_bytes: number | string;
+  uploaded_at: string;
+}
+
+export interface NoRiskCriterion {
+  indicator: string;
+  answer: 'yes' | 'no';
+  observations: string;
+}
+
+export interface Annex27Payload {
+  researchType: string;
+  location: string;
+  responsibleInstitutions: string;
+  principalInvestigatorId: string;
+  principalInvestigatorDegree: string;
+  criteria: NoRiskCriterion[];
+}
+
 export interface RegistrationRequestItem {
   id: string;
   name: string;
@@ -24,12 +47,21 @@ export interface StratificationTask {
   risk_level: RiskLevel | null;
   assigned_at: string;
   decided_at: string | null;
+  research_code: string;
+  title: string;
   document_name: string;
   researcher_name: string;
   researcher_email: string;
   classification_status: string;
   final_risk_level: RiskLevel | null;
-  other_risk_level: RiskLevel | null;
+  documents: WorkflowDocument[];
+  annex_11_status: string | null;
+  annex_23_id: string | null;
+  has_conflict: boolean | null;
+  conflict_data: Record<string, unknown> | null;
+  annex_27_id: string | null;
+  annex_27_status: string | null;
+  annex_27_data: Partial<Annex27Payload> | null;
 }
 
 export type QualificationStatus =
@@ -120,8 +152,15 @@ export const workflowService = {
     return apiGet('/api/stratifications');
   },
 
-  saveRiskDecision(id: string, riskLevel: RiskLevel): Promise<{ result: string; message: string }> {
-    return apiPatch(`/api/stratifications/${id}`, { riskLevel });
+  declareConflict(
+    id: string,
+    declaration: { placeDate: string; hasConflict: boolean; details: string },
+  ): Promise<{ result: string; message: string }> {
+    return apiPost(`/api/stratifications/${id}/conflict`, declaration);
+  },
+
+  saveNoRiskDecision(id: string, annex27: Annex27Payload): Promise<{ result: string; message: string }> {
+    return apiPatch(`/api/stratifications/${id}`, { annex27 });
   },
 
   getQualificationTasks(): Promise<QualificationTask[]> {
