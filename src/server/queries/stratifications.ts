@@ -35,7 +35,9 @@ export interface StratificationTaskRow {
   classification_status: string;
   final_risk_level: RiskLevel | null;
   documents: SubmissionDocumentRow[];
+  annex_11_id: string | null;
   annex_11_status: string | null;
+  annex_11_data: Record<string, unknown> | null;
   annex_23_id: string | null;
   has_conflict: boolean | null;
   conflict_data: Record<string, unknown> | null;
@@ -52,7 +54,9 @@ export async function listStratificationTasks(stratifierId: string): Promise<Str
             u.name AS researcher_name, u.email AS researcher_email,
             s.classification_status, s.risk_level AS final_risk_level,
             COALESCE(documents.items, '[]'::json) AS documents,
+            annex11.id AS annex_11_id,
             annex11.status AS annex_11_status,
+            annex11.data AS annex_11_data,
             annex23.id AS annex_23_id,
             CASE
               WHEN annex23.id IS NULL THEN NULL
@@ -107,6 +111,27 @@ export async function hasStratificationAssignment(stratifierId: string, submissi
     `SELECT 1 FROM stratification_assignments
       WHERE stratifier_id = $1 AND submission_id = $2 LIMIT 1`,
     [stratifierId, submissionId],
+  );
+  return rows.length > 0;
+}
+
+export async function updateAnnex11(
+  assignmentId: string,
+  stratifierId: string,
+  data: Record<string, unknown>,
+): Promise<boolean> {
+  const rows = await query<{ id: string }>(
+    `UPDATE research_annexes annex
+        SET data = annex.data || $3::jsonb,
+            updated_at = NOW()
+       FROM stratification_assignments assignment
+      WHERE assignment.id = $1
+        AND assignment.stratifier_id = $2
+        AND annex.submission_id = assignment.submission_id
+        AND annex.annex_number = 11
+        AND annex.status <> 'voided'
+      RETURNING annex.id`,
+    [assignmentId, stratifierId, JSON.stringify(data)],
   );
   return rows.length > 0;
 }

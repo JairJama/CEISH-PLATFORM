@@ -26,7 +26,7 @@ import {
 } from './queries/registrationRequests';
 import {
   declareStratificationConflict, hasStratificationAssignment,
-  listStratificationTasks, saveStratificationDecision,
+  listStratificationTasks, saveStratificationDecision, updateAnnex11,
   type Annex27Input,
 } from './queries/stratifications';
 import {
@@ -505,6 +505,33 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
     const session = requireRole(req, res, 'evaluator');
     if (!session) return true;
     sendJson(res, 200, await listStratificationTasks(session.id));
+    return true;
+  }
+  const annex11Match = path.match(/^\/api\/stratifications\/([^/]+)\/annex-11$/);
+  if (annex11Match && method === 'PATCH') {
+    const session = requireRole(req, res, 'evaluator');
+    if (!session) return true;
+    const b = await readJsonBody(req);
+    const data = b.data && typeof b.data === 'object' && !Array.isArray(b.data)
+      ? b.data as Record<string, unknown>
+      : null;
+    if (!data) {
+      sendJson(res, 400, { error: 'Los datos del Anexo 11 no son válidos' });
+      return true;
+    }
+    const allowedKeys = new Set([
+      'officeNumber', 'issueDate', 'studyType', 'durationMonths',
+      'participatingInstitutions', 'studyResearchers',
+    ]);
+    const sanitized = Object.fromEntries(
+      Object.entries(data)
+        .filter(([key]) => allowedKeys.has(key))
+        .map(([key, value]) => [key, String(value ?? '').trim()]),
+    );
+    const updated = await updateAnnex11(annex11Match[1], session.id, sanitized);
+    sendJson(res, updated ? 200 : 404, updated
+      ? { message: 'Anexo 11 actualizado' }
+      : { error: 'Anexo 11 no encontrado' });
     return true;
   }
   const stratificationMatch = path.match(/^\/api\/stratifications\/([^/]+)$/);

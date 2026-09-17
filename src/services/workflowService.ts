@@ -55,7 +55,9 @@ export interface StratificationTask {
   classification_status: string;
   final_risk_level: RiskLevel | null;
   documents: WorkflowDocument[];
+  annex_11_id: string | null;
   annex_11_status: string | null;
+  annex_11_data: Record<string, unknown> | null;
   annex_23_id: string | null;
   has_conflict: boolean | null;
   conflict_data: Record<string, unknown> | null;
@@ -157,6 +159,10 @@ export const workflowService = {
     declaration: { placeDate: string; hasConflict: boolean; details: string },
   ): Promise<{ result: string; message: string }> {
     return apiPost(`/api/stratifications/${id}/conflict`, declaration);
+  },
+
+  updateAnnex11(id: string, data: Record<string, unknown>): Promise<{ message: string }> {
+    return apiPatch(`/api/stratifications/${id}/annex-11`, { data });
   },
 
   saveNoRiskDecision(id: string, annex27: Annex27Payload): Promise<{ result: string; message: string }> {
