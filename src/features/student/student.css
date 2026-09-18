@@ -9,6 +9,12 @@
   max-width: 680px;
 }
 
+.student-submissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .submission-card__top {
   display: flex;
   align-items: flex-start;

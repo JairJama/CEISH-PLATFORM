@@ -14,6 +14,11 @@ export const submissionsService = {
     return platformService.getSubmissionForStudent(studentId);
   },
 
+  /** Investigaciones del investigador, desde la más reciente. */
+  getAllForStudent(): Promise<StudentSubmission[]> {
+    return platformService.getSubmissionsForStudent();
+  },
+
   /** Sube el conjunto documental y crea la investigación. */
   async createWithDocuments(
     studentId: string,

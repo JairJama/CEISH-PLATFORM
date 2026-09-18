@@ -12,14 +12,19 @@ type ModalMode = 'create' | 'edit' | null;
 
 export function SubmissionPage() {
   const currentUser = useAuthStore((s) => s.currentUser)!;
-  const [submission, setSubmission] = useState<StudentSubmission | null>(null);
+  const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalMode, setModalMode] = useState<ModalMode>(null);
-  const [correctionModalOpen, setCorrectionModalOpen] = useState(false);
+  const [editingSubmission, setEditingSubmission] = useState<StudentSubmission | null>(null);
+  const [correctionSubmission, setCorrectionSubmission] = useState<StudentSubmission | null>(null);
+
+  const reloadSubmissions = async () => {
+    setSubmissions(await submissionsService.getAllForStudent());
+  };
 
   useEffect(() => {
-    void submissionsService.getForStudent(currentUser.id).then((sub) => {
-      setSubmission(sub);
+    void submissionsService.getAllForStudent().then((items) => {
+      setSubmissions(items);
       setLoading(false);
     });
   }, [currentUser.id]);
@@ -28,12 +33,13 @@ export function SubmissionPage() {
     try {
       if (modalMode === 'create') {
         const sub = await submissionsService.createWithDocuments(currentUser.id, title, files, comment);
-        setSubmission(sub);
-      } else if (modalMode === 'edit' && submission) {
-        const sub = await submissionsService.updateWithDocuments(submission.id, title, files, comment);
-        setSubmission(sub);
+        setSubmissions((current) => [sub, ...current]);
+      } else if (modalMode === 'edit' && editingSubmission) {
+        const sub = await submissionsService.updateWithDocuments(editingSubmission.id, title, files, comment);
+        setSubmissions((current) => current.map((item) => item.id === sub.id ? sub : item));
       }
       setModalMode(null);
+      setEditingSubmission(null);
     } catch (e) {
       window.alert(`No se pudo enviar la investigación: ${(e as Error).message}`);
     }
@@ -48,30 +54,28 @@ export function SubmissionPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!submission) return;
+  const handleDelete = async (submission: StudentSubmission) => {
     if (!window.confirm('¿Estás seguro de que deseas eliminar tu entrega?')) return;
     await submissionsService.remove(submission.id);
-    setSubmission(null);
+    setSubmissions((current) => current.filter((item) => item.id !== submission.id));
   };
 
   const handleCorrection = async (file: File) => {
-    if (!submission?.qualificationId) return;
-    await workflowService.submitCorrection(submission.qualificationId, file);
-    const updated = await submissionsService.getForStudent(currentUser.id);
-    setSubmission(updated);
-    setCorrectionModalOpen(false);
+    if (!correctionSubmission?.qualificationId) return;
+    await workflowService.submitCorrection(correctionSubmission.qualificationId, file);
+    await reloadSubmissions();
+    setCorrectionSubmission(null);
   };
 
   return (
     <div className="page">
       <div className="page__header">
         <div>
-          <h1 className="page__title">Mi investigación</h1>
-          <p className="page__subtitle">Envía el conjunto documental y consulta sus anexos y estratificación</p>
+          <h1 className="page__title">Mis investigaciones</h1>
+          <p className="page__subtitle">Envía y da seguimiento independiente a cada investigación</p>
         </div>
-        {!submission && !loading && (
-          <button className="eval-btn eval-btn--primary" onClick={() => setModalMode('create')}>
+        {!loading && (
+          <button className="eval-btn eval-btn--primary" onClick={() => { setEditingSubmission(null); setModalMode('create'); }}>
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
               <path d="M7.5 2v11M2 7.5h11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
@@ -86,14 +90,19 @@ export function SubmissionPage() {
             <div className="pdf-spinner" />
             <span>Cargando...</span>
           </div>
-        ) : submission ? (
-          <SubmissionCard
-            submission={submission}
-            onView={handleView}
-            onEdit={() => setModalMode('edit')}
-            onDelete={handleDelete}
-            onSubmitCorrections={() => setCorrectionModalOpen(true)}
-          />
+        ) : submissions.length > 0 ? (
+          <div className="student-submissions-list">
+            {submissions.map((submission) => (
+              <SubmissionCard
+                key={submission.id}
+                submission={submission}
+                onView={handleView}
+                onEdit={() => { setEditingSubmission(submission); setModalMode('edit'); }}
+                onDelete={() => void handleDelete(submission)}
+                onSubmitCorrections={() => setCorrectionSubmission(submission)}
+              />
+            ))}
+          </div>
         ) : (
           <div className="empty-state">
             <div className="empty-state__icon">
@@ -103,7 +112,7 @@ export function SubmissionPage() {
                 <path d="M26 21v10M21 26h10" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </div>
-            <h2 className="empty-state__title">Aún no has enviado una investigación</h2>
+            <h2 className="empty-state__title">Aún no has enviado investigaciones</h2>
             <p className="empty-state__desc">
               Adjunta uno o varios documentos Word para que un miembro del CEISH revise y estratifique la investigación.
             </p>
@@ -117,16 +126,16 @@ export function SubmissionPage() {
       {modalMode && (
         <UploadModal
           mode={modalMode}
-          initialTitle={submission?.title}
-          initialComment={submission?.comment}
+          initialTitle={editingSubmission?.title}
+          initialComment={editingSubmission?.comment}
           onConfirm={handleConfirm}
           onCancel={() => setModalMode(null)}
         />
       )}
-      {correctionModalOpen && (
+      {correctionSubmission && (
         <CorrectionUploadModal
           onConfirm={handleCorrection}
-          onCancel={() => setCorrectionModalOpen(false)}
+          onCancel={() => setCorrectionSubmission(null)}
         />
       )}
     </div>

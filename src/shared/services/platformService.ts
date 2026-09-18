@@ -75,7 +75,10 @@ const num = (v: number | string | null): number | undefined =>
   v == null ? undefined : Number(v);
 
 function mapRole(dbRole: string): UserRole {
-  return dbRole === 'teacher' ? 'evaluator' : (dbRole as UserRole);
+  const normalized = dbRole.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return ['teacher', 'evaluator', 'member', 'miembro', 'ceish', 'ceish_member', 'miembro_ceish'].includes(normalized)
+    ? 'evaluator'
+    : (normalized as UserRole);
 }
 
 function mapSubStatus(dbStatus: string): SubmissionStatus {
@@ -194,6 +197,11 @@ export const platformService = {
   async getSubmissionForStudent(studentId: string): Promise<StudentSubmission | null> {
     const data = await apiGet<SubmissionDTO | null>(`/api/submissions?studentId=${studentId}`);
     return data ? mapSubmission(data) : null;
+  },
+
+  async getSubmissionsForStudent(): Promise<StudentSubmission[]> {
+    const data = await apiGet<SubmissionDTO[]>('/api/submissions?all=true');
+    return data.map(mapSubmission);
   },
 
   async getAllSubmissions(): Promise<StudentSubmission[]> {
