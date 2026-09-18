@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { query, withTransaction } from '../../lib/database';
 import type { SubmissionDocumentRow } from './submissions';
+import { createQualificationCase } from './qualifications';
 
 export type RiskLevel = 'no-risk' | 'minimal-risk' | 'greater-than-minimal';
 
@@ -312,6 +313,9 @@ export async function saveStratificationDecision(
         WHERE id = $1`,
       [assignment.submission_id],
     );
+    // Por defecto, quien estratificó el caso continúa como evaluador.
+    // Administración puede reasignar esta responsabilidad después.
+    await createQualificationCase(assignment.submission_id, stratifierId, client);
     return 'classified';
   });
 }

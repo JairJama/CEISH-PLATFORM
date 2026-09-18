@@ -5,6 +5,22 @@ import type { UserRole } from '../shared/types/platform.types';
 const COOKIE_NAME = 'ceish_session';
 const MAX_AGE_SECONDS = 60 * 60 * 8;
 
+function normalizeRole(role: unknown): UserRole | null {
+  const aliases: Record<string, UserRole> = {
+    student: 'student',
+    admin: 'admin',
+    teacher: 'evaluator',
+    evaluator: 'evaluator',
+    member: 'evaluator',
+    ceish_member: 'evaluator',
+    ceish: 'evaluator',
+    miembro: 'evaluator',
+    miembro_ceish: 'evaluator',
+  };
+  const normalized = typeof role === 'string' ? role.trim().toLowerCase().replace(/[\s-]+/g, '_') : '';
+  return aliases[normalized] ?? null;
+}
+
 export interface SessionUser { id: string; role: UserRole; exp: number }
 
 function secret() { return process.env.SESSION_SECRET ?? 'ceish-development-secret-change-before-production'; }
@@ -27,7 +43,8 @@ export function getSession(req: IncomingMessage): SessionUser | null {
   if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
   try {
     const value = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as SessionUser;
-    return value.id && ['student', 'evaluator', 'admin'].includes(value.role) && value.exp > Date.now() / 1000 ? value : null;
+    const role = normalizeRole(value.role);
+    return value.id && role && value.exp > Date.now() / 1000 ? { ...value, role } : null;
   } catch { return null; }
 }
 

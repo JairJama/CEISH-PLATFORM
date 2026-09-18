@@ -12,7 +12,7 @@ import busboy from 'busboy';
 
 import { listUsers, listUsersByRole, getUserById } from './queries/users';
 import {
-  listSubmissions, getSubmissionByStudent, getSubmissionById,
+  listSubmissions, listSubmissionsByStudent, getSubmissionByStudent, getSubmissionById,
   createSubmission, updateSubmission, deleteSubmission, getDocumentPath, getSubmissionDocument,
 } from './queries/submissions';
 import {
@@ -31,9 +31,9 @@ import {
 } from './queries/stratifications';
 import {
   cancelQualification, expireOverdueQualifications, getCorrectionDocument,
-  listQualificationTasks, reviewQualification, submitCorrection,
+  ensureQualificationCasesForNoRiskResearch, listQualificationTasks, reviewQualification, submitCorrection,
 } from './queries/qualifications';
-import { cancelResearch, listAdminResearch, reassignStratifier } from './queries/adminResearch';
+import { cancelResearch, listAdminResearch, reassignQualifier, reassignStratifier } from './queries/adminResearch';
 import {
   getAnnexDocument, regenerateAnnexDocument, regenerateAssignmentAnnexDocument,
   regenerateSubmissionAnnexDocument,
@@ -64,6 +64,11 @@ function requireRole(req: Connect.IncomingMessage, res: ServerResponse, ...roles
     return null;
   }
   return session;
+}
+
+function isCeishMemberRole(role: string): boolean {
+  return ['teacher', 'evaluator', 'member', 'miembro', 'ceish', 'ceish_member', 'miembro_ceish']
+    .includes(role.trim().toLowerCase().replace(/[\s-]+/g, '_'));
 }
 
 async function canAccessSubmission(session: SessionUser, submissionId: string): Promise<boolean> {
@@ -192,7 +197,7 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
     const session = requireSession(req, res);
     if (!session) return true;
     const user = await getUserById(session.id);
-    sendJson(res, user ? 200 : 401, user ? { ...user, role: user.role === 'teacher' ? 'evaluator' : user.role } : { error: 'La sesión ya no es válida' });
+    sendJson(res, user ? 200 : 401, user ? { ...user, role: isCeishMemberRole(user.role) ? 'evaluator' : user.role } : { error: 'La sesión ya no es válida' });
     return true;
   }
 
@@ -249,6 +254,22 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
     sendJson(res, result === 'not-found' ? 404 : 409, {
       error: result === 'closed' ? 'La investigación ya está cerrada' : 'Investigación no encontrada',
     });
+    return true;
+  }
+  const adminResearchQualifierMatch = path.match(/^\/api\/admin\/research\/([^/]+)\/qualifier$/);
+  if (adminResearchQualifierMatch && method === 'PATCH') {
+    if (!requireRole(req, res, 'admin')) return true;
+    const b = await readJsonBody(req);
+    const result = await reassignQualifier(adminResearchQualifierMatch[1], String(b.qualifierId ?? ''));
+    if (result === 'reassigned') {
+      sendJson(res, 200, { message: 'Evaluador reasignado' });
+      return true;
+    }
+    const status = result === 'not-found' ? 404 : result === 'invalid-member' ? 400 : 409;
+    sendJson(res, status, { error: result === 'locked'
+      ? 'No se puede cambiar el evaluador de una investigación cerrada'
+      : result === 'invalid-member' ? 'El usuario seleccionado no es miembro CEISH interno'
+      : 'Caso de evaluación no encontrado' });
     return true;
   }
 
@@ -383,7 +404,8 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
     await expireOverdueQualifications();
     const studentId = url.searchParams.get('studentId');
     if (session.role === 'student') {
-      sendJson(res, 200, await getSubmissionByStudent(session.id));
+      const all = url.searchParams.get('all') === 'true';
+      sendJson(res, 200, all ? await listSubmissionsByStudent(session.id) : await getSubmissionByStudent(session.id));
     } else if (session.role === 'evaluator') {
       const studentIds = (await listAssignmentsByTeacher(session.id)).map((assignment) => assignment.student_id);
       const submissions = await listSubmissions();
@@ -508,14 +530,14 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
 
   // ── Risk stratification ─────────────────────────────────────────────────
   if (path === '/api/stratifications' && method === 'GET') {
-    const session = requireRole(req, res, 'evaluator');
+    const session = requireSession(req, res);
     if (!session) return true;
     sendJson(res, 200, await listStratificationTasks(session.id));
     return true;
   }
   const annex11Match = path.match(/^\/api\/stratifications\/([^/]+)\/annex-11$/);
   if (annex11Match && method === 'PATCH') {
-    const session = requireRole(req, res, 'evaluator');
+    const session = requireSession(req, res);
     if (!session) return true;
     const b = await readJsonBody(req);
     const data = b.data && typeof b.data === 'object' && !Array.isArray(b.data)
@@ -543,7 +565,7 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
   }
   const stratificationMatch = path.match(/^\/api\/stratifications\/([^/]+)$/);
   if (stratificationMatch && method === 'PATCH') {
-    const session = requireRole(req, res, 'evaluator');
+    const session = requireSession(req, res);
     if (!session) return true;
     const b = await readJsonBody(req);
     const annex = b.annex27 as Annex27Input | undefined;
@@ -588,7 +610,7 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
 
   const stratificationConflictMatch = path.match(/^\/api\/stratifications\/([^/]+)\/conflict$/);
   if (stratificationConflictMatch && method === 'POST') {
-    const session = requireRole(req, res, 'evaluator');
+    const session = requireSession(req, res);
     if (!session) return true;
     const b = await readJsonBody(req);
     const placeDate = String(b.placeDate ?? '').trim();
@@ -652,15 +674,16 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
 
   // ── Qualification for no-risk research ─────────────────────────────────
   if (path === '/api/qualifications' && method === 'GET') {
-    const session = requireRole(req, res, 'evaluator');
+    const session = requireSession(req, res);
     if (!session) return true;
     sendJson(res, 200, await listQualificationTasks(session.id));
     return true;
   }
   const qualificationReviewMatch = path.match(/^\/api\/qualifications\/([^/]+)\/review$/);
   if (qualificationReviewMatch && method === 'PATCH') {
-    const session = requireRole(req, res, 'evaluator');
+    const session = requireSession(req, res);
     if (!session) return true;
+    await ensureQualificationCasesForNoRiskResearch();
     const b = await readJsonBody(req);
     if (typeof b.hasObservations !== 'boolean') {
       sendJson(res, 400, { error: 'Indica si la investigación tiene observaciones' });
@@ -678,6 +701,10 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       sendJson(res, 404, { error: 'Calificación no encontrada' });
       return true;
     }
+    if (result === 'not-assigned') {
+      sendJson(res, 403, { error: 'Esta evaluación fue reasignada a otro miembro CEISH' });
+      return true;
+    }
     if (result === 'closed') {
       sendJson(res, 409, { error: 'Esta investigación no está disponible para revisión' });
       return true;
@@ -692,7 +719,7 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
   }
   const qualificationCancelMatch = path.match(/^\/api\/qualifications\/([^/]+)\/cancel$/);
   if (qualificationCancelMatch && method === 'PATCH') {
-    const session = requireRole(req, res, 'evaluator');
+    const session = requireSession(req, res);
     if (!session) return true;
     const cancelled = await cancelQualification(qualificationCancelMatch[1], session.id);
     sendJson(res, cancelled ? 200 : 409, cancelled

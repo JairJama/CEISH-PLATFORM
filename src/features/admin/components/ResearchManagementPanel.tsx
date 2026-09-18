@@ -25,6 +25,8 @@ function ResearchRow({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const canReassign = research.classification_status === 'awaiting-first' && !research.stratification_decided_at;
+  const canReassignQualifier = Boolean(research.qualifier_id)
+    && !['approved', 'cancelled', 'expired'].includes(research.qualification_status ?? '');
   const canCancel = research.classification_status !== 'cancelled' && research.qualification_status !== 'approved';
 
   const reassign = async (event: FormEvent<HTMLFormElement>) => {
@@ -50,6 +52,23 @@ function ResearchRow({
     setMessage(null);
     try {
       const result = await workflowService.cancelResearch(research.submission_id);
+      setMessage(result.message);
+      await onChanged();
+    } catch (cause) {
+      setMessage((cause as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const reassignQualifier = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const qualifierId = new FormData(event.currentTarget).get('qualifierId') as string | null;
+    if (!qualifierId || qualifierId === research.qualifier_id) return;
+    setSaving(true);
+    setMessage(null);
+    try {
+      const result = await workflowService.reassignQualifier(research.submission_id, qualifierId);
       setMessage(result.message);
       await onChanged();
     } catch (cause) {
@@ -114,6 +133,24 @@ function ResearchRow({
             ? 'La investigación está cancelada.'
             : 'La reasignación se bloqueó porque la estratificación ya inició.'}
         </p>
+      )}
+
+      {research.qualifier_id && (
+        <div className="research-management-card__assignment">
+          <span>Evaluador asignado</span>
+          <strong>{research.qualifier_name} <small>{research.qualifier_email}</small></strong>
+        </div>
+      )}
+      {canReassignQualifier && (
+        <form className="research-management-card__reassign" onSubmit={reassignQualifier}>
+          <label>
+            Cambiar evaluador CEISH
+            <select name="qualifierId" defaultValue={research.qualifier_id ?? ''} disabled={saving}>
+              {members.map((member) => <option key={member.id} value={member.id}>{member.name} · {member.email}</option>)}
+            </select>
+          </label>
+          <button className="eval-btn eval-btn--outline" type="submit" disabled={saving}>Reasignar evaluador</button>
+        </form>
       )}
 
       <div className="research-management-card__actions">

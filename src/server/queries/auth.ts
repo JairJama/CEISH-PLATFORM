@@ -62,9 +62,16 @@ export async function loginUser(email: string, password: string) {
 
   const roleMap: Record<string, string> = {
     teacher: 'evaluator',
+    evaluator: 'evaluator',
+    member: 'evaluator',
+    ceish_member: 'evaluator',
+    'ceish-member': 'evaluator',
+    miembro: 'evaluator',
+    miembro_ceish: 'evaluator',
     student: 'student',
     admin: 'admin',
   };
 
-  return { id: row.id, name: row.name, email: row.email, role: roleMap[row.role] ?? row.role };
+  const normalizedRole = row.role.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return { id: row.id, name: row.name, email: row.email, role: roleMap[normalizedRole] ?? normalizedRole };
 }

@@ -13,6 +13,9 @@ export interface AdminResearchRow {
   stratifier_email: string | null;
   stratification_decided_at: string | null;
   qualification_status: string | null;
+  qualifier_id: string | null;
+  qualifier_name: string | null;
+  qualifier_email: string | null;
   annexes: Array<{
     id: string;
     annexNumber: 11 | 23 | 27;
@@ -29,6 +32,7 @@ export async function listAdminResearch(): Promise<AdminResearchRow[]> {
             sa.stratifier_id, stratifier.name AS stratifier_name,
             stratifier.email AS stratifier_email, sa.decided_at AS stratification_decided_at,
             qc.status AS qualification_status,
+            qc.qualifier_id, qualifier.name AS qualifier_name, qualifier.email AS qualifier_email,
             COALESCE(annexes.items, '[]'::json) AS annexes
        FROM submissions s
        JOIN users researcher ON researcher.id = s.student_id
@@ -36,6 +40,7 @@ export async function listAdminResearch(): Promise<AdminResearchRow[]> {
          ON sa.submission_id = s.id AND sa.round_number = 1
        LEFT JOIN users stratifier ON stratifier.id = sa.stratifier_id
        LEFT JOIN qualification_cases qc ON qc.submission_id = s.id
+       LEFT JOIN users qualifier ON qualifier.id = qc.qualifier_id
        LEFT JOIN LATERAL (
          SELECT json_agg(json_build_object(
            'id', annex.id,
@@ -53,6 +58,8 @@ export async function listAdminResearch(): Promise<AdminResearchRow[]> {
 }
 
 export type ReassignResult = 'reassigned' | 'locked' | 'not-found' | 'invalid-member';
+
+const CEISH_INTERNAL_ROLE_SQL = "lower(regexp_replace(r.name, '[ -]+', '_', 'g')) IN ('teacher', 'evaluator', 'member', 'miembro', 'ceish', 'ceish_member', 'miembro_ceish')";
 
 export async function reassignStratifier(
   submissionId: string,
@@ -78,7 +85,7 @@ export async function reassignStratifier(
 
     const members = await client.query<{ id: string }>(
       `SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
-        WHERE u.id = $1 AND r.name = 'teacher'`,
+        WHERE u.id = $1 AND ${CEISH_INTERNAL_ROLE_SQL}`,
       [nextStratifierId],
     );
     if (!members.rows[0]) return 'invalid-member';
@@ -87,6 +94,34 @@ export async function reassignStratifier(
       `UPDATE stratification_assignments SET stratifier_id = $2, assigned_at = NOW()
         WHERE id = $1`,
       [assignment.assignment_id, nextStratifierId],
+    );
+    return 'reassigned';
+  });
+}
+
+export async function reassignQualifier(
+  submissionId: string,
+  nextQualifierId: string,
+): Promise<ReassignResult> {
+  return withTransaction(async (client) => {
+    const cases = await client.query<{ id: string; status: string }>(
+      `SELECT id, status FROM qualification_cases
+        WHERE submission_id = $1
+        FOR UPDATE`,
+      [submissionId],
+    );
+    const qualification = cases.rows[0];
+    if (!qualification) return 'not-found';
+    if (['approved', 'cancelled', 'expired'].includes(qualification.status)) return 'locked';
+    const members = await client.query<{ id: string }>(
+      `SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
+        WHERE u.id = $1 AND ${CEISH_INTERNAL_ROLE_SQL}`,
+      [nextQualifierId],
+    );
+    if (!members.rows[0]) return 'invalid-member';
+    await client.query(
+      `UPDATE qualification_cases SET qualifier_id = $2, updated_at = NOW() WHERE id = $1`,
+      [qualification.id, nextQualifierId],
     );
     return 'reassigned';
   });

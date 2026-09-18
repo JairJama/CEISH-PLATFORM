@@ -38,6 +38,27 @@ export async function expireOverdueQualifications(): Promise<void> {
   );
 }
 
+/** Recupera casos sin riesgo que pudieron clasificarse antes de crear su evaluación. */
+export async function ensureQualificationCasesForNoRiskResearch(): Promise<void> {
+  await query(
+    `INSERT INTO qualification_cases (submission_id, qualifier_id)
+     SELECT submission.id, assignment.stratifier_id
+       FROM submissions submission
+       JOIN stratification_assignments assignment
+         ON assignment.submission_id = submission.id
+        AND assignment.round_number = 1
+      WHERE submission.classification_status = 'classified'
+        AND submission.risk_level = 'no-risk'
+     ON CONFLICT (submission_id) DO NOTHING`,
+  );
+  await query(
+    `INSERT INTO qualification_cycles (qualification_id, cycle_number)
+     SELECT qualification.id, 1
+       FROM qualification_cases qualification
+     ON CONFLICT (qualification_id, cycle_number) DO NOTHING`,
+  );
+}
+
 export async function createQualificationCase(
   submissionId: string,
   qualifierId: string,
@@ -60,6 +81,7 @@ export async function createQualificationCase(
 }
 
 export async function listQualificationTasks(qualifierId: string): Promise<QualificationTaskRow[]> {
+  await ensureQualificationCasesForNoRiskResearch();
   await expireOverdueQualifications();
   return query<QualificationTaskRow>(
     `SELECT qc.id, qc.submission_id, qc.qualifier_id, qc.status, qc.current_cycle,
@@ -79,7 +101,7 @@ export async function listQualificationTasks(qualifierId: string): Promise<Quali
   );
 }
 
-export type ReviewResult = 'approved' | 'corrections-required' | 'closed' | 'not-found';
+export type ReviewResult = 'approved' | 'corrections-required' | 'closed' | 'not-found' | 'not-assigned';
 
 export async function reviewQualification(
   qualificationId: string,
@@ -90,20 +112,22 @@ export async function reviewQualification(
   return withTransaction(async (client) => {
     const cases = await client.query<{
       id: string;
+      qualifier_id: string;
       status: QualificationStatus;
       current_cycle: number;
       cycle_id: string;
     }>(
-      `SELECT qc.id, qc.status, qc.current_cycle, cycle.id AS cycle_id
+      `SELECT qc.id, qc.qualifier_id, qc.status, qc.current_cycle, cycle.id AS cycle_id
          FROM qualification_cases qc
          JOIN qualification_cycles cycle
            ON cycle.qualification_id = qc.id AND cycle.cycle_number = qc.current_cycle
-        WHERE qc.id = $1 AND qc.qualifier_id = $2
+        WHERE qc.id = $1
         FOR UPDATE OF qc, cycle`,
-      [qualificationId, qualifierId],
+      [qualificationId],
     );
     const qualification = cases.rows[0];
     if (!qualification) return 'not-found';
+    if (qualification.qualifier_id !== qualifierId) return 'not-assigned';
     if (!['pending-review', 'resubmitted'].includes(qualification.status)) return 'closed';
 
     if (!hasObservations) {

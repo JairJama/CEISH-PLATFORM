@@ -105,6 +105,9 @@ export interface AdminResearchItem {
   stratifier_email: string | null;
   stratification_decided_at: string | null;
   qualification_status: QualificationStatus | null;
+  qualifier_id: string | null;
+  qualifier_name: string | null;
+  qualifier_email: string | null;
   annexes: Array<{
     id: string;
     annexNumber: 11 | 23 | 27;
@@ -146,6 +149,10 @@ export const workflowService = {
 
   reassignStratifier(submissionId: string, stratifierId: string): Promise<{ message: string }> {
     return apiPatch(`/api/admin/research/${submissionId}/reassign`, { stratifierId });
+  },
+
+  reassignQualifier(submissionId: string, qualifierId: string): Promise<{ message: string }> {
+    return apiPatch(`/api/admin/research/${submissionId}/qualifier`, { qualifierId });
   },
 
   cancelResearch(submissionId: string): Promise<{ message: string }> {
