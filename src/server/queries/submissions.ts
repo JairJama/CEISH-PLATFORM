@@ -85,6 +85,13 @@ export async function getSubmissionByStudent(studentId: string): Promise<Submiss
   return rows[0] ?? null;
 }
 
+export async function listSubmissionsByStudent(studentId: string): Promise<SubmissionRow[]> {
+  return query<SubmissionRow>(
+    `${BASE_SELECT} WHERE s.student_id = $1 ORDER BY s.submitted_at DESC`,
+    [studentId],
+  );
+}
+
 export async function getSubmissionById(id: string): Promise<SubmissionRow | null> {
   const rows = await query<SubmissionRow>(`${BASE_SELECT} WHERE s.id = $1`, [id]);
   return rows[0] ?? null;
@@ -166,7 +173,8 @@ export async function createSubmission(input: CreateSubmissionInput): Promise<Su
          JOIN roles r ON r.id = u.role_id
          LEFT JOIN stratification_assignments sa ON sa.stratifier_id = u.id
          LEFT JOIN submissions s ON s.id = sa.submission_id
-        WHERE r.name = 'teacher'
+        WHERE lower(regexp_replace(r.name, '[ -]+', '_', 'g'))
+          IN ('teacher', 'evaluator', 'member', 'miembro', 'ceish', 'ceish_member', 'miembro_ceish')
         GROUP BY u.id`,
     );
     if (members.rows.length) {
