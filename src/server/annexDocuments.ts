@@ -142,7 +142,10 @@ function formatDate(raw: string): string {
 
 function applyAnnex11(xml: string, annex: GeneratedAnnexData): string {
   const issueDate = formatDate(value(annex.data, 'issueDate'));
-  let next = replaceText(xml, 'Oficio Nro.', `Oficio Nro. ${value(annex.data, 'officeNumber', annex.researchCode)}`);
+  let next = replaceText(xml, 'Formato de Carta de exención', 'Resolución de aprobación');
+  next = replaceText(next, 'como notifica a Usted que este proyecto es una investigación exenta de evaluación por parte del CEISH-Uleam, de acuerdo con lo establecido en la normativa legal vigente.', 'notifica a Usted que este proyecto ha sido APROBADO por el CEISH-Uleam para su ejecución, conforme a la evaluación realizada.');
+  next = replaceText(next, 'Esta carta de exención tiene una vigencia de un año, contado desde la fecha de recepción de esta documentación.', 'La presente resolución de aprobación entra en vigencia a partir de su fecha de emisión.');
+  next = replaceText(next, 'Oficio Nro.', `Oficio Nro. ${value(annex.data, 'officeNumber', annex.researchCode)}`);
   next = replaceText(next, 'Manta, XX de XX 20XX', `Manta, ${issueDate}`);
   next = replaceText(next, 'XXXXXXXXX', annex.researcherName);
   next = replaceText(next, 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXX', annex.title);
@@ -282,6 +285,7 @@ function applyAnnex13(xml: string, annex: GeneratedAnnexData): string {
   next = replaceText(next, '"TITULO"', `"${annex.title}"`);
   next = replaceText(next, '(NOMBRE DE LA INSTITUCIÓN)', affiliation);
   if (value(annex.data, 'decision') === 'cancelled') {
+    next = replaceText(next, 'carta de aprobación definitiva- estudios observacionales/de intervención', 'resolución de no aprobación y cierre del caso');
     next = replaceText(next, 'APROBADO', 'NO APROBADO');
   }
   return next;
