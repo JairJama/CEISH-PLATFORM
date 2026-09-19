@@ -265,6 +265,25 @@
 .qualification-card__correction div { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--c-text-2); }
 .qualification-card__correction span { font-size: 12px; color: var(--c-text-muted); }
 .qualification-card__form { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.annex-12-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; width: 100%; padding-bottom: 10px; border-bottom: 1px solid var(--c-border); }
+.annex-12-heading > div { display: flex; flex-direction: column; gap: 2px; }
+.annex-12-heading span { color: var(--c-primary); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.annex-12-heading strong { color: var(--c-text); font-size: 14px; }
+.annex-12-heading small { color: var(--c-text-muted); font-size: 11px; }
+.annex-12-checklist { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.annex-12-section { flex: 0 0 auto; overflow: hidden; border: 1px solid var(--c-border); border-radius: var(--r-md); background: var(--c-surface); }
+.annex-12-section h3 { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; background: var(--c-primary-light); border-bottom: 1px solid var(--c-primary-border); color: var(--c-primary); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.annex-12-section h3 small { color: var(--c-text-muted); font-size: 10px; font-weight: 600; letter-spacing: normal; text-transform: none; }
+.annex-12-criterion { display: grid; grid-template-columns: minmax(260px, 1.35fr) minmax(160px, .5fr) minmax(240px, 1fr); align-items: center; gap: 14px; padding: 13px 14px; border-top: 1px solid var(--c-border); }
+.annex-12-criterion:first-of-type { border-top: 0; }
+.annex-12-criterion p { align-self: center; color: var(--c-text-2); font-size: 12px; line-height: 1.45; }
+.annex-12-criterion label { display: flex; flex-direction: column; gap: 4px; color: var(--c-text-muted); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.annex-12-criterion input { width: 100%; height: 36px; padding: 0 9px; border: 1px solid var(--c-border); border-radius: var(--r-sm); background: var(--c-surface); color: var(--c-text); font: inherit; font-size: 12px; font-weight: 400; letter-spacing: normal; text-transform: none; }
+.annex-12-criterion input:focus { outline: 2px solid var(--c-primary-border); border-color: var(--c-primary); }
+.annex-12-criterion__check { align-items: flex-start; justify-content: center; min-height: 56px; padding: 10px 12px; border: 1px solid var(--c-border); border-radius: var(--r-sm); background: var(--c-surface-2); cursor: pointer; }
+.annex-12-criterion__check input { width: 17px; height: 17px; margin: 0 0 2px; padding: 0; accent-color: var(--c-primary); }
+.annex-12-criterion__check span { color: var(--c-text-2); font-size: 12px; letter-spacing: normal; text-transform: none; }
+.annex-12-criterion__check small { color: var(--c-text-muted); font-size: 10px; font-weight: 500; letter-spacing: normal; text-transform: none; }
 .qualification-card__form fieldset { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; }
 .qualification-card__form legend { width: 100%; margin-bottom: 5px; font-size: 12px; font-weight: 700; color: var(--c-text-2); }
 .qualification-card__form fieldset label { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--c-border); border-radius: var(--r-md); font-size: 12px; color: var(--c-text-2); }
@@ -273,7 +292,20 @@
 .qualification-card__observations textarea:focus { outline: 2px solid var(--c-primary-border); border-color: var(--c-primary); }
 .qualification-card__actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; border-top: 1px solid var(--c-border); }
 .qualification-card__message { font-size: 12px; color: var(--c-text-muted); }
+.qualification-annex-history { display: flex; flex-direction: column; gap: 9px; padding: 13px; border: 1px solid var(--c-primary-border); border-radius: var(--r-md); background: var(--c-primary-light); }
+.qualification-annex-history > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.qualification-annex-history > div strong { color: var(--c-text-2); font-size: 12px; }
+.qualification-annex-history > div span { color: var(--c-text-muted); font-size: 11px; }
+.qualification-annex-history ol { display: flex; flex-direction: column; gap: 7px; list-style: none; }
+.qualification-annex-history li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; border-top: 1px solid var(--c-primary-border); }
+.qualification-annex-history li > div { display: flex; flex-direction: column; gap: 2px; }
+.qualification-annex-history li > div:last-child { flex-direction: row; gap: 6px; }
+.qualification-annex-history li strong { color: var(--c-text-2); font-size: 12px; }
+.qualification-annex-history li span { color: var(--c-text-muted); font-size: 11px; }
+.qualification-annex-history .eval-btn { padding: 5px 9px; }
 
 @media (max-width: 640px) {
   .qualification-card__header, .qualification-card__correction { align-items: stretch; flex-direction: column; }
+  .annex-12-heading, .qualification-annex-history li { align-items: stretch; flex-direction: column; }
+  .annex-12-criterion { grid-template-columns: 1fr; }
 }

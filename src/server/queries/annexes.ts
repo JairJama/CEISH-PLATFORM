@@ -6,7 +6,7 @@ const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingm
 
 interface AnnexSourceRow {
   id: string;
-  annex_number: 11 | 23 | 27;
+  annex_number: 11 | 12 | 13 | 23 | 27;
   data: Record<string, unknown>;
   research_code: string;
   title: string;
@@ -20,11 +20,13 @@ interface AnnexSourceRow {
 
 export interface AnnexDocumentRow {
   id: string;
-  annex_number: 11 | 23 | 27;
+  annex_number: 11 | 12 | 13 | 23 | 27;
+  status: 'draft' | 'completed' | 'voided';
   submission_id: string;
   researcher_id: string;
   completed_by: string | null;
   assignment_member_id: string | null;
+  qualification_member_id: string | null;
   document_name: string | null;
   document_path: string | null;
 }
@@ -96,7 +98,10 @@ export async function regenerateAnnexDocument(annexId: string): Promise<AnnexDoc
     data: source.data,
     documents: source.documents,
   } satisfies GeneratedAnnexData);
-  const documentName = `Anexo-${source.annex_number}-${source.research_code}.docx`;
+  const revision = source.annex_number === 12 && typeof source.data.revisionNumber === 'number'
+    ? `-Revision-${String(source.data.revisionNumber).padStart(2, '0')}`
+    : '';
+  const documentName = `Anexo-${source.annex_number}-${source.research_code}${revision}.docx`;
   const documentPath = await uploadDocument(generated, documentName, DOCX_MIME);
   await query(
     `UPDATE research_annexes
@@ -125,13 +130,16 @@ export async function regenerateSubmissionAnnexDocument(
 
 export async function getAnnexDocument(id: string): Promise<AnnexDocumentRow | null> {
   const rows = await query<AnnexDocumentRow>(
-    `SELECT annex.id, annex.annex_number, annex.submission_id,
+    `SELECT annex.id, annex.annex_number, annex.status, annex.submission_id,
             submission.student_id AS researcher_id, annex.completed_by,
             assignment.stratifier_id AS assignment_member_id,
+            qualification.qualifier_id AS qualification_member_id,
             annex.document_name, annex.document_path
        FROM research_annexes annex
        JOIN submissions submission ON submission.id = annex.submission_id
        LEFT JOIN stratification_assignments assignment ON assignment.id = annex.assignment_id
+       LEFT JOIN qualification_cycles cycle ON cycle.id = annex.qualification_cycle_id
+       LEFT JOIN qualification_cases qualification ON qualification.id = cycle.qualification_id
       WHERE annex.id = $1`,
     [id],
   );

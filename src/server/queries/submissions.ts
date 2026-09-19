@@ -143,17 +143,16 @@ export async function createSubmission(input: CreateSubmissionInput): Promise<Su
     }
     await client.query(
       `INSERT INTO research_annexes
-         (submission_id, annex_number, status, data, created_by, completed_at)
-       SELECT $1, 11, 'completed',
+         (submission_id, annex_number, status, data, created_by)
+       SELECT $1, 11, 'draft',
               jsonb_build_object(
                 'researchCode', $2::text,
                 'title', $3::text,
                 'researcherName', u.name,
                 'researcherEmail', u.email,
-                'issuedAt', NOW(),
                 'documents', $4::jsonb
               ),
-              $5, NOW()
+              $5
          FROM users u
         WHERE u.id = $5`,
       [

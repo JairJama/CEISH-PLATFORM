@@ -100,8 +100,8 @@ export function SubmissionCard({ submission, onView, onEdit, onDelete, onSubmitC
       </div>
 
       <div className="submission-card__annex">
-        <span className="submission-card__comment-label">Anexo 11 · Carta de exención</span>
-        <strong>{submission.annex11Status === 'completed' ? 'Emitido al enviar la investigación' : 'Pendiente'}</strong>
+        <span className="submission-card__comment-label">Anexo 11 · Resolución de aprobación</span>
+        <strong>{submission.annex11Status === 'completed' ? 'Emitido: investigación aprobada' : 'Pendiente de aprobación'}</strong>
       </div>
 
       <div className={`submission-card__classification ${submission.riskLevel ? 'submission-card__classification--done' : ''} ${submission.classificationStatus === 'cancelled' ? 'submission-card__classification--cancelled' : ''}`}>

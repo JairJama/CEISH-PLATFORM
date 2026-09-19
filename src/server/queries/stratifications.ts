@@ -120,8 +120,8 @@ export async function updateAnnex11(
   assignmentId: string,
   stratifierId: string,
   data: Record<string, unknown>,
-): Promise<boolean> {
-  const rows = await query<{ id: string }>(
+): Promise<'draft' | 'completed' | null> {
+  const rows = await query<{ status: 'draft' | 'completed' }>(
     `UPDATE research_annexes annex
         SET data = annex.data || $3::jsonb,
             updated_at = NOW()
@@ -130,11 +130,11 @@ export async function updateAnnex11(
         AND assignment.stratifier_id = $2
         AND annex.submission_id = assignment.submission_id
         AND annex.annex_number = 11
-        AND annex.status <> 'voided'
-      RETURNING annex.id`,
+        AND annex.status = 'draft'
+      RETURNING annex.status`,
     [assignmentId, stratifierId, JSON.stringify(data)],
   );
-  return rows.length > 0;
+  return rows[0]?.status ?? null;
 }
 
 export type ConflictResult = 'cleared' | 'reassigned' | 'unavailable' | 'closed' | 'not-found';

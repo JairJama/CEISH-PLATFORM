@@ -132,13 +132,14 @@ CREATE INDEX idx_stratification_submission
 
 -- ----------------------------------------------------------------------------
 -- research_annexes
--- Instancias editables y auditables de los anexos 11, 23 y 27.
+-- Instancias editables y auditables de los anexos 11, 12, 13, 23 y 27.
 -- ----------------------------------------------------------------------------
 CREATE TABLE research_annexes (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   submission_id UUID NOT NULL REFERENCES submissions(id) ON DELETE CASCADE,
   assignment_id UUID REFERENCES stratification_assignments(id) ON DELETE SET NULL,
-  annex_number  SMALLINT NOT NULL CHECK (annex_number IN (11, 23, 27)),
+  annex_number  SMALLINT NOT NULL CHECK (annex_number IN (11, 12, 13, 23, 27)),
+  qualification_cycle_id UUID,
   status        VARCHAR(20) NOT NULL DEFAULT 'draft'
                   CHECK (status IN ('draft', 'completed', 'voided')),
   data          JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -158,12 +159,17 @@ CREATE INDEX idx_research_annexes_assignment
   ON research_annexes(assignment_id, annex_number, created_at DESC);
 CREATE INDEX idx_research_annexes_completed_by
   ON research_annexes(completed_by, annex_number);
+CREATE INDEX idx_research_annexes_qualification_cycle
+  ON research_annexes(qualification_cycle_id, annex_number, created_at DESC);
 CREATE UNIQUE INDEX idx_research_annexes_active_11
   ON research_annexes(submission_id, annex_number)
   WHERE annex_number = 11 AND status <> 'voided';
 CREATE UNIQUE INDEX idx_research_annexes_active_27
   ON research_annexes(assignment_id, annex_number)
   WHERE annex_number = 27 AND status <> 'voided';
+CREATE UNIQUE INDEX idx_research_annexes_active_13
+  ON research_annexes(submission_id, annex_number)
+  WHERE annex_number = 13 AND status <> 'voided';
 CREATE INDEX idx_research_annexes_document
   ON research_annexes(id)
   WHERE document_path IS NOT NULL;
@@ -213,6 +219,10 @@ CREATE TABLE qualification_cycles (
 
 CREATE INDEX idx_qualification_cycles_case
   ON qualification_cycles(qualification_id, cycle_number);
+
+ALTER TABLE research_annexes
+  ADD CONSTRAINT research_annexes_qualification_cycle_fk
+  FOREIGN KEY (qualification_cycle_id) REFERENCES qualification_cycles(id) ON DELETE SET NULL;
 
 -- ----------------------------------------------------------------------------
 -- assignments  (relación profesor - estudiante)

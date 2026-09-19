@@ -1,5 +1,7 @@
 # Contexto integral de CEISH Platform
 
+> Para el flujo documental de evaluación, historial del Anexo 12 y correspondencia verificada de los modelos institucionales, consultar [`flujo-anexos-evaluacion.md`](./flujo-anexos-evaluacion.md).
+
 > Documento de transferencia para entender el propósito, funcionamiento, reglas de negocio, arquitectura y estado real del proyecto.
 >
 > Está basado en README.md, CLAUDE.md, docs/database-design.md, database/schema.sql, database/seed.sql y el código actual de src/. Cuando el diseño conceptual difiere de la implementación, se indica expresamente.
@@ -48,7 +50,7 @@ La traducción teacher/evaluator se realiza principalmente en src/shared/service
 - Investigaciones con código CEISH, título y múltiples documentos.
 - Subida, reemplazo, consulta y eliminación de investigaciones mientras el flujo lo permite.
 - Asignación automática de miembros CEISH, detección de conflicto de interés, reasignación y cancelación administrativa.
-- Formularios institucionales para anexos 11, 23 y 27.
+- Formularios institucionales para anexos 11, 12, 13, 23 y 27.
 - Generación de archivos DOCX desde plantillas en `public/annex-templates/` y almacenamiento en MinIO.
 - Calificación de investigaciones sin riesgo, solicitud de correcciones y vencimiento automático del plazo de 30 días.
 - Revisión con cuatro etapas y criterios configurados en código.
@@ -109,13 +111,13 @@ Entra a `/evaluador` y puede utilizar `/evaluador/estratificacion`, `/evaluador/
 En estratificación puede:
 
 - Consultar investigaciones asignadas.
-- Completar el Anexo 11 con la información administrativa y documental.
+- Preparar los datos del Anexo 11, que se emite cuando la investigación es aprobada.
 - Declarar conflicto de interés mediante el Anexo 23.
 - Completar el Anexo 27 con los ocho indicadores de investigación sin riesgo.
 - Descargar los anexos DOCX generados.
 - Emitir el dictamen de riesgo cuando la información requerida esté completa.
 
-En el módulo de calificación puede revisar investigaciones clasificadas como sin riesgo, solicitar correcciones, aprobarlas o cancelarlas. El investigador dispone de 30 días para enviar el informe de correcciones.
+En el módulo de calificación completa el checklist oficial del Anexo 12. Cada decisión conserva una nueva emisión histórica: puede solicitar correcciones, aprobar mediante un Anexo 12 sin observaciones junto con el Anexo 11, o cerrar con observaciones y Anexo 13 después de una corrección. El investigador dispone de 30 días para enviar el informe de correcciones.
 
 La pantalla muestra estudiantes que tienen una asignación con ese evaluador. Por estudiante muestra:
 
@@ -395,7 +397,7 @@ Metadatos de la investigación:
 - grade.
 - final_comment.
 
-`submission_documents` almacena el conjunto documental asociado y `research_annexes` conserva los datos y documentos generados de los anexos 11, 23 y 27.
+`submission_documents` almacena el conjunto documental asociado y `research_annexes` conserva los datos y documentos generados de los anexos 11, 12, 13, 23 y 27. Las emisiones del Anexo 12 son registros independientes vinculados a su ciclo de calificación y nunca se sobrescriben.
 
 ### registration_requests y researcher_profiles
 
@@ -407,7 +409,7 @@ Relaciona una investigación con un miembro CEISH y conserva ronda, riesgo, fech
 
 ### qualification_cases y qualification_cycles
 
-Gestionan la calificación de investigaciones sin riesgo, los ciclos de corrección, la fecha límite de 30 días y los documentos enviados por el investigador.
+Gestionan la calificación de investigaciones sin riesgo, los ciclos de corrección, la fecha límite de 30 días y los documentos enviados por el investigador. Cada decisión del evaluador se vincula con una emisión del Anexo 12; la aprobación emite el Anexo 11 y el cierre emite el Anexo 13.
 
 ### assignments
 
@@ -617,8 +619,7 @@ Las rutas protegidas usan `RequireRole` en el frontend y la API valida sesión y
 | Método | Endpoint | Uso |
 |---|---|---|
 | GET | /api/qualifications | Listar casos del evaluador. |
-| PATCH | /api/qualifications/:id/review | Aprobar o solicitar correcciones. |
-| PATCH | /api/qualifications/:id/cancel | Cancelar un caso de calificación. |
+| PATCH | /api/qualifications/:id/review | Emitir el checklist del Anexo 12; solicitar correcciones, aprobar con Anexo 11 o cerrar con Anexo 13 después de correcciones. |
 | POST | /api/qualifications/:id/corrections | Enviar el informe de correcciones. |
 | GET | /api/qualification-corrections/:id | Obtener URL del informe de correcciones. |
 
@@ -803,7 +804,7 @@ Revisar:
 - src/services/storage.ts.
 - src/server/queries/submissions.ts.
 
-La entrega actual es una investigación con título y documentos DOC/DOCX. Al crear o actualizar una investigación se regenera el Anexo 11 si existe la información necesaria.
+La entrega actual es una investigación con título y documentos DOC/DOCX. Al registrarla se prepara un borrador del Anexo 11; el documento se emite al aprobar la investigación.
 
 ### Flujo de anexos
 
@@ -873,10 +874,10 @@ No se debe poner SQL dentro de componentes ni importar módulos server-only en c
 3. Entrar como `admin@ceish.edu` y revisar solicitudes e investigaciones.
 4. Entrar como `juan@ceish.edu` y registrar una investigación con documentos Word menores a 15 MB.
 5. Entrar como `miembro@ceish.edu` o `miembro01@ceish.edu`.
-6. Abrir `/evaluador/estratificacion`, completar el Anexo 11 y declarar el Anexo 23.
-7. Si aplica, completar los ocho indicadores del Anexo 27 y descargar el DOCX generado.
+6. Abrir `/evaluador/estratificacion`, preparar el Anexo 11 y declarar el Anexo 23.
+7. Si aplica, completar los ocho indicadores del Anexo 27 y comprobar que se emitan los DOCX de los anexos 11 y 27.
 8. Verificar como investigador los documentos y anexos en `/estudiante`.
-9. Probar `/evaluador/calificacion` para una investigación sin riesgo y enviar correcciones como investigador.
+9. Probar `/evaluador/calificacion`: completar todos los criterios del Anexo 12, emitir observaciones, enviar correcciones como investigador y revisar el historial. Verificar que la aprobación genere los anexos 12 y 13.
 10. Probar `/evaluador/revision/:submissionId` para el flujo de revisión por etapas.
 
 Endpoints útiles:

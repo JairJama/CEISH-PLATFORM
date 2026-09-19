@@ -172,7 +172,11 @@ function ResearchRow({
           <ul>
             {research.annexes.map((annex) => (
               <li key={annex.id}>
-                <span>Anexo {annex.annexNumber}</span>
+                <span>
+                  Anexo {annex.annexNumber}
+                  {annex.revisionNumber ? ` · Revisión ${annex.revisionNumber}` : ''}
+                  {annex.createdAt ? ` · ${new Date(annex.createdAt).toLocaleDateString('es-EC')}` : ''}
+                </span>
                 <div>
                   <button className="eval-btn eval-btn--outline" type="button" onClick={() => void openAnnex(annex.id, false)}>
                     {annex.documentReady ? 'Visualizar' : 'Generar y visualizar'}

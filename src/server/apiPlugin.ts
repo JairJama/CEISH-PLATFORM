@@ -30,8 +30,9 @@ import {
   type Annex27Input,
 } from './queries/stratifications';
 import {
-  cancelQualification, expireOverdueQualifications, getCorrectionDocument,
+  expireOverdueQualifications, getCorrectionDocument,
   ensureQualificationCasesForNoRiskResearch, listQualificationTasks, reviewQualification, submitCorrection,
+  type QualificationReviewDecision, type QualificationReviewInput,
 } from './queries/qualifications';
 import { cancelResearch, listAdminResearch, reassignQualifier, reassignStratifier } from './queries/adminResearch';
 import {
@@ -441,7 +442,6 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       documents,
       comment: String(b.comment ?? ''),
     });
-    await regenerateSubmissionAnnexDocument(created.id, 11);
     sendJson(res, 201, created);
     return true;
   }
@@ -483,7 +483,9 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       comment: b.comment as string | undefined,
       documents,
     });
-    if (updated) await regenerateSubmissionAnnexDocument(updated.id, 11);
+    if (updated?.annex_11_status === 'completed') {
+      await regenerateSubmissionAnnexDocument(updated.id, 11);
+    }
     sendJson(res, updated ? 200 : 404, updated ?? { error: 'Entrega no encontrada' });
     return true;
   }
@@ -556,10 +558,10 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
         .filter(([key]) => allowedKeys.has(key))
         .map(([key, value]) => [key, String(value ?? '').trim()]),
     );
-    const updated = await updateAnnex11(annex11Match[1], session.id, sanitized);
-    if (updated) await regenerateAssignmentAnnexDocument(annex11Match[1], 11);
-    sendJson(res, updated ? 200 : 404, updated
-      ? { message: 'Anexo 11 actualizado' }
+    const status = await updateAnnex11(annex11Match[1], session.id, sanitized);
+    if (status === 'completed') await regenerateAssignmentAnnexDocument(annex11Match[1], 11);
+    sendJson(res, status ? 200 : 404, status
+      ? { message: status === 'completed' ? 'Anexo 11 actualizado' : 'Borrador del Anexo 11 guardado' }
       : { error: 'Anexo 11 no encontrado' });
     return true;
   }
@@ -650,8 +652,14 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       sendJson(res, 404, { error: 'Anexo no encontrado' });
       return true;
     }
+    if (document.status !== 'completed') {
+      sendJson(res, 409, { error: 'El anexo todavía no ha sido emitido' });
+      return true;
+    }
     const isAssignedMember = session.role === 'evaluator'
-      && (session.id === document.completed_by || session.id === document.assignment_member_id);
+      && (session.id === document.completed_by
+        || session.id === document.assignment_member_id
+        || session.id === document.qualification_member_id);
     const isResearcherWithExemption = session.role === 'student'
       && session.id === document.researcher_id
       && document.annex_number === 11;
@@ -674,57 +682,73 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
 
   // ── Qualification for no-risk research ─────────────────────────────────
   if (path === '/api/qualifications' && method === 'GET') {
-    const session = requireSession(req, res);
+    const session = requireRole(req, res, 'evaluator');
     if (!session) return true;
     sendJson(res, 200, await listQualificationTasks(session.id));
     return true;
   }
   const qualificationReviewMatch = path.match(/^\/api\/qualifications\/([^/]+)\/review$/);
   if (qualificationReviewMatch && method === 'PATCH') {
-    const session = requireSession(req, res);
+    const session = requireRole(req, res, 'evaluator');
     if (!session) return true;
     await ensureQualificationCasesForNoRiskResearch();
     const b = await readJsonBody(req);
-    if (typeof b.hasObservations !== 'boolean') {
-      sendJson(res, 400, { error: 'Indica si la investigación tiene observaciones' });
+    const decision = b.decision as QualificationReviewDecision;
+    if (!['approved', 'corrections-required', 'cancelled'].includes(decision)) {
+      sendJson(res, 400, { error: 'Selecciona una decisión válida para la evaluación' });
       return true;
     }
     const observations = String(b.observations ?? '').trim();
-    if (b.hasObservations && !observations) {
+    if (decision !== 'approved' && !observations) {
       sendJson(res, 400, { error: 'Describe las observaciones encontradas' });
       return true;
     }
-    const result = await reviewQualification(
-      qualificationReviewMatch[1], session.id, b.hasObservations, observations,
-    );
-    if (result === 'not-found') {
+    if (!Array.isArray(b.checklist)) {
+      sendJson(res, 400, { error: 'Completa el checklist institucional del Anexo 12' });
+      return true;
+    }
+    const input: QualificationReviewInput = {
+      decision,
+      observations,
+      checklist: b.checklist.map((item) => {
+        const row = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+        return {
+          id: String(row.id ?? ''),
+          result: String(row.result ?? '') as QualificationReviewInput['checklist'][number]['result'],
+          observations: String(row.observations ?? ''),
+        };
+      }),
+    };
+    const outcome = await reviewQualification(qualificationReviewMatch[1], session.id, input);
+    if (outcome.result === 'not-found') {
       sendJson(res, 404, { error: 'Calificación no encontrada' });
       return true;
     }
-    if (result === 'not-assigned') {
+    if (outcome.result === 'not-assigned') {
       sendJson(res, 403, { error: 'Esta evaluación fue reasignada a otro miembro CEISH' });
       return true;
     }
-    if (result === 'closed') {
+    if (outcome.result === 'closed') {
       sendJson(res, 409, { error: 'Esta investigación no está disponible para revisión' });
       return true;
     }
+    if (outcome.result === 'invalid-checklist') {
+      sendJson(res, 400, { error: 'Completa todos los criterios y mantén la decisión consistente con el checklist' });
+      return true;
+    }
+    if (outcome.result === 'invalid-cancellation') {
+      sendJson(res, 409, { error: 'El evaluador solo puede cerrar el caso después de recibir correcciones' });
+      return true;
+    }
+    await Promise.allSettled(outcome.annexIds.map((annexId) => regenerateAnnexDocument(annexId)));
     sendJson(res, 200, {
-      result,
-      message: result === 'approved'
-        ? 'Investigación aprobada'
-        : 'Observaciones notificadas; el investigador tiene 30 días para responder',
+      result: outcome.result,
+      message: outcome.result === 'approved'
+        ? 'Anexos 11 y 12 emitidos: investigación aprobada'
+        : outcome.result === 'cancelled'
+          ? 'Anexos 12 y 13 emitidos: caso cerrado por el evaluador'
+          : 'Anexo 12 emitido; el investigador tiene 30 días para responder',
     });
-    return true;
-  }
-  const qualificationCancelMatch = path.match(/^\/api\/qualifications\/([^/]+)\/cancel$/);
-  if (qualificationCancelMatch && method === 'PATCH') {
-    const session = requireSession(req, res);
-    if (!session) return true;
-    const cancelled = await cancelQualification(qualificationCancelMatch[1], session.id);
-    sendJson(res, cancelled ? 200 : 409, cancelled
-      ? { message: 'Investigación cancelada' }
-      : { error: 'La investigación ya está cerrada o no existe' });
     return true;
   }
   const correctionSubmitMatch = path.match(/^\/api\/qualifications\/([^/]+)\/corrections$/);
