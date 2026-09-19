@@ -21,7 +21,7 @@ Plataforma institucional para la recepción, estratificación y evaluación de i
 - Ver lista de estudiantes asignados con filtros por estado
 - Estratificar investigaciones y emitir los anexos 11, 23 y 27 según corresponda
 - Completar el checklist oficial del Anexo 12 y conservar cada emisión en el historial
-- Solicitar correcciones con plazo de 30 días o aprobar mediante los anexos 12 y 13
+- Solicitar correcciones con plazo de 30 días, aprobar mediante los anexos 12 y 11 o cerrar mediante el Anexo 13
 - Abrir un flujo de revisión de 4 etapas: Estructura, Metodología, Resultados y Formato
 - Evaluar cada criterio (aprobar / rechazar) con observaciones y referencia de página en el PDF
 - Navegar entre etapas y finalizar con calificación numérica y comentario final

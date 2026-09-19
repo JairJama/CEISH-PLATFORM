@@ -130,7 +130,7 @@ export async function updateAnnex11(
         AND assignment.stratifier_id = $2
         AND annex.submission_id = assignment.submission_id
         AND annex.annex_number = 11
-        AND annex.status <> 'voided'
+        AND annex.status = 'draft'
       RETURNING annex.status`,
     [assignmentId, stratifierId, JSON.stringify(data)],
   );

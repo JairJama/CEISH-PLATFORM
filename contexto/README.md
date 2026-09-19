@@ -111,13 +111,13 @@ Entra a `/evaluador` y puede utilizar `/evaluador/estratificacion`, `/evaluador/
 En estratificación puede:
 
 - Consultar investigaciones asignadas.
-- Preparar el Anexo 11, que se emite como carta de exención al concluir la estratificación sin riesgo.
+- Preparar los datos del Anexo 11, que se emite cuando la investigación es aprobada.
 - Declarar conflicto de interés mediante el Anexo 23.
 - Completar el Anexo 27 con los ocho indicadores de investigación sin riesgo.
 - Descargar los anexos DOCX generados.
 - Emitir el dictamen de riesgo cuando la información requerida esté completa.
 
-En el módulo de calificación completa el checklist oficial del Anexo 12. Cada decisión conserva una nueva emisión histórica: puede solicitar correcciones, aprobar mediante un Anexo 12 sin observaciones junto con el Anexo 13, o cerrar con observaciones después de una corrección. El investigador dispone de 30 días para enviar el informe de correcciones.
+En el módulo de calificación completa el checklist oficial del Anexo 12. Cada decisión conserva una nueva emisión histórica: puede solicitar correcciones, aprobar mediante un Anexo 12 sin observaciones junto con el Anexo 11, o cerrar con observaciones y Anexo 13 después de una corrección. El investigador dispone de 30 días para enviar el informe de correcciones.
 
 La pantalla muestra estudiantes que tienen una asignación con ese evaluador. Por estudiante muestra:
 
@@ -409,7 +409,7 @@ Relaciona una investigación con un miembro CEISH y conserva ronda, riesgo, fech
 
 ### qualification_cases y qualification_cycles
 
-Gestionan la calificación de investigaciones sin riesgo, los ciclos de corrección, la fecha límite de 30 días y los documentos enviados por el investigador. Cada decisión del evaluador se vincula con una emisión del Anexo 12; la aprobación también emite el Anexo 13.
+Gestionan la calificación de investigaciones sin riesgo, los ciclos de corrección, la fecha límite de 30 días y los documentos enviados por el investigador. Cada decisión del evaluador se vincula con una emisión del Anexo 12; la aprobación emite el Anexo 11 y el cierre emite el Anexo 13.
 
 ### assignments
 
@@ -619,7 +619,7 @@ Las rutas protegidas usan `RequireRole` en el frontend y la API valida sesión y
 | Método | Endpoint | Uso |
 |---|---|---|
 | GET | /api/qualifications | Listar casos del evaluador. |
-| PATCH | /api/qualifications/:id/review | Emitir el checklist del Anexo 12; solicitar correcciones, aprobar con Anexo 13 o cerrar después de correcciones. |
+| PATCH | /api/qualifications/:id/review | Emitir el checklist del Anexo 12; solicitar correcciones, aprobar con Anexo 11 o cerrar con Anexo 13 después de correcciones. |
 | POST | /api/qualifications/:id/corrections | Enviar el informe de correcciones. |
 | GET | /api/qualification-corrections/:id | Obtener URL del informe de correcciones. |
 
@@ -804,7 +804,7 @@ Revisar:
 - src/services/storage.ts.
 - src/server/queries/submissions.ts.
 
-La entrega actual es una investigación con título y documentos DOC/DOCX. Al registrarla se prepara un borrador del Anexo 11; el documento se emite al concluir la estratificación sin riesgo.
+La entrega actual es una investigación con título y documentos DOC/DOCX. Al registrarla se prepara un borrador del Anexo 11; el documento se emite al aprobar la investigación.
 
 ### Flujo de anexos
 
