@@ -2,7 +2,6 @@ import { useEffect, useState, type FormEvent } from 'react';
 import {
   ANNEX_12_SECTIONS,
   type Annex12ChecklistItem,
-  type Annex12CriterionResult,
 } from '../../shared/annex12';
 import { workflowService, type QualificationAnnex, type QualificationTask } from '../../services/workflowService';
 import './evaluator.css';
