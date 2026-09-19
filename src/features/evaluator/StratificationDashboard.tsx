@@ -67,13 +67,13 @@ function Annex11Editor({ task, onSaved }: { task: StratificationTask; onSaved: (
 
   return (
     <details className="annex-editor">
-      <summary>Revisar o completar Anexo 11</summary>
+      <summary>Preparar datos del Anexo 11</summary>
       <form className="annex-form annex-form--compact" onSubmit={save}>
         <div className="annex-form__heading">
           <span>Anexo 11</span>
           <div>
-            <h3>Carta de exención</h3>
-            <p>El código, título, investigador y listado documental se completaron automáticamente.</p>
+            <h3>Resolución de aprobación</h3>
+            <p>Estos datos se conservarán como borrador y el Anexo 11 se emitirá al aprobar la investigación.</p>
           </div>
         </div>
         <div className="annex-form__grid">
@@ -94,7 +94,6 @@ function Annex11Editor({ task, onSaved }: { task: StratificationTask; onSaved: (
 function AnnexDocumentActions({ task }: { task: StratificationTask }) {
   const [message, setMessage] = useState<string | null>(null);
   const documents = [
-    { id: task.annex_11_status === 'completed' ? task.annex_11_id : null, label: 'Anexo 11' },
     { id: task.annex_23_id, label: 'Anexo 23' },
     { id: task.annex_27_status === 'completed' ? task.annex_27_id : null, label: 'Anexo 27' },
   ].filter((document): document is { id: string; label: string } => Boolean(document.id));
@@ -383,9 +382,7 @@ function StratificationCard({ task, onSaved }: { task: StratificationTask; onSav
       </div>
 
       <div className="annex-timeline" aria-label="Estado de anexos">
-        <span className={task.annex_11_status === 'completed' ? 'annex-timeline__done' : ''}>
-          Anexo 11 · {task.annex_11_status === 'completed' ? 'Emitido' : 'Borrador'}
-        </span>
+        <span>Anexo 11 · Se emite al aprobar</span>
         <span className={task.annex_23_id ? 'annex-timeline__done' : ''}>Anexo 23 · {task.annex_23_id ? 'Completado' : 'Pendiente'}</span>
         <span className={task.annex_27_status === 'completed' ? 'annex-timeline__done' : ''}>Anexo 27 · {task.annex_27_status === 'completed' ? 'Completado' : 'Pendiente'}</span>
       </div>

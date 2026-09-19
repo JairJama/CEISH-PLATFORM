@@ -129,6 +129,7 @@ export async function listQualificationTasks(qualifierId: string): Promise<Quali
           WHERE annex.submission_id = qc.submission_id
             AND annex.annex_number IN (11, 12, 13)
             AND annex.status = 'completed'
+            AND (annex.annex_number <> 11 OR annex.qualification_cycle_id IS NOT NULL)
        ) annexes ON TRUE
       WHERE qc.qualifier_id = $1
       ORDER BY (qc.status IN ('approved', 'cancelled', 'expired')), qc.updated_at DESC`,

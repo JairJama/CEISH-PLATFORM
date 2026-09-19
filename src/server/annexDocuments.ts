@@ -221,7 +221,6 @@ const ANNEX_12_TEMPLATE_OCCURRENCES: Partial<Record<string, number>> = {
 function checklistResultLabel(result: unknown): string {
   if (result === 'complies') return 'CUMPLE';
   if (result === 'does-not-comply') return 'NO CUMPLE';
-  if (result === 'not-applicable') return 'NO APLICA';
   return 'SIN RESPUESTA';
 }
 
@@ -282,6 +281,9 @@ function applyAnnex13(xml: string, annex: GeneratedAnnexData): string {
   next = replaceText(next, 'INDICAR EL NOMBRE DE LA INSTITUCIÓN', affiliation);
   next = replaceText(next, '"TITULO"', `"${annex.title}"`);
   next = replaceText(next, '(NOMBRE DE LA INSTITUCIÓN)', affiliation);
+  if (value(annex.data, 'decision') === 'cancelled') {
+    next = replaceText(next, 'APROBADO para su ejecución', 'NO APROBADO para su ejecución');
+  }
   return next;
 }
 
