@@ -302,16 +302,6 @@ export async function saveStratificationDecision(
       ],
     );
     await client.query(
-      `UPDATE research_annexes
-          SET status = 'completed', completed_by = $2,
-              completed_at = NOW(), updated_at = NOW(),
-              data = data || jsonb_build_object('issuedAt', NOW())
-        WHERE submission_id = $1
-          AND annex_number = 11
-          AND status <> 'voided'`,
-      [assignment.submission_id, stratifierId],
-    );
-    await client.query(
       `UPDATE stratification_assignments
           SET risk_level = 'no-risk', decided_at = NOW()
         WHERE id = $1`,

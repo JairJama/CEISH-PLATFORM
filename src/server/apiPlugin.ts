@@ -606,8 +606,7 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
       return true;
     }
     await regenerateAssignmentAnnexDocument(stratificationMatch[1], 27);
-    await regenerateAssignmentAnnexDocument(stratificationMatch[1], 11);
-    sendJson(res, 200, { result, message: 'Anexos 11 y 27 completados: investigación clasificada sin riesgo' });
+    sendJson(res, 200, { result, message: 'Anexo 27 completado: investigación clasificada sin riesgo' });
     return true;
   }
 
@@ -745,9 +744,9 @@ async function handle(req: Connect.IncomingMessage, res: ServerResponse): Promis
     sendJson(res, 200, {
       result: outcome.result,
       message: outcome.result === 'approved'
-        ? 'Anexos 12 y 13 emitidos: investigación aprobada'
+        ? 'Anexos 11 y 12 emitidos: investigación aprobada'
         : outcome.result === 'cancelled'
-          ? 'Anexo 12 emitido y caso cerrado por el evaluador'
+          ? 'Anexos 12 y 13 emitidos: caso cerrado por el evaluador'
           : 'Anexo 12 emitido; el investigador tiene 30 días para responder',
     });
     return true;

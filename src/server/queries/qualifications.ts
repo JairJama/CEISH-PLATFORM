@@ -34,7 +34,7 @@ export interface QualificationTaskRow {
 
 export interface QualificationAnnexRow {
   id: string;
-  annexNumber: 12 | 13;
+  annexNumber: 11 | 12 | 13;
   cycleNumber: number | null;
   revisionNumber: number | null;
   decision: string | null;
@@ -127,7 +127,7 @@ export async function listQualificationTasks(qualifierId: string): Promise<Quali
            FROM research_annexes annex
            LEFT JOIN qualification_cycles linked_cycle ON linked_cycle.id = annex.qualification_cycle_id
           WHERE annex.submission_id = qc.submission_id
-            AND annex.annex_number IN (12, 13)
+            AND annex.annex_number IN (11, 12, 13)
             AND annex.status = 'completed'
        ) annexes ON TRUE
       WHERE qc.qualifier_id = $1
@@ -164,7 +164,7 @@ export interface QualificationReviewOutcome {
 }
 
 function normalizeChecklist(input: QualificationReviewInput['checklist']): Annex12ChecklistItem[] | null {
-  const allowedResults = new Set<Annex12CriterionResult>(['complies', 'does-not-comply', 'not-applicable']);
+  const allowedResults = new Set<Annex12CriterionResult>(['complies', 'does-not-comply']);
   const byId = new Map(input.map((item) => [item.id, item]));
   if (byId.size !== ANNEX_12_CRITERIA.length || input.length !== ANNEX_12_CRITERIA.length) return null;
   const normalized: Annex12ChecklistItem[] = [];
@@ -332,6 +332,53 @@ export async function reviewQualification(
     const annexIds = [annex12.rows[0].id];
 
     if (input.decision === 'approved') {
+      const annex11 = await client.query<{ id: string }>(
+        `UPDATE research_annexes
+            SET status = 'completed', qualification_cycle_id = $2,
+                completed_by = $3, completed_at = NOW(), updated_at = NOW(),
+                data = data || $4::jsonb
+          WHERE submission_id = $1
+            AND annex_number = 11
+            AND status = 'draft'
+          RETURNING id`,
+        [
+          qualification.submission_id,
+          annexCycleId,
+          qualifierId,
+          JSON.stringify({ decision: 'approved', reviewedAt, revisionNumber }),
+        ],
+      );
+      let annex11Id = annex11.rows[0]?.id;
+      if (!annex11Id) {
+        // Conserva registros heredados, pero evita reutilizar una emisión
+        // creada con la numeración anterior para la aprobación actual.
+        await client.query(
+          `UPDATE research_annexes
+              SET status = 'voided', updated_at = NOW()
+            WHERE submission_id = $1
+              AND annex_number = 11
+              AND status <> 'voided'`,
+          [qualification.submission_id],
+        );
+        const createdAnnex11 = await client.query<{ id: string }>(
+          `INSERT INTO research_annexes
+             (submission_id, qualification_cycle_id, annex_number, status, data,
+              created_by, completed_by, completed_at)
+           VALUES ($1, $2, 11, 'completed', $3::jsonb, $4, $4, NOW())
+           RETURNING id`,
+          [
+            qualification.submission_id,
+            annexCycleId,
+            JSON.stringify({ decision: 'approved', reviewedAt, revisionNumber }),
+            qualifierId,
+          ],
+        );
+        annex11Id = createdAnnex11.rows[0].id;
+      }
+      annexIds.push(annex11Id);
+    }
+
+    if (input.decision === 'cancelled') {
       const annex13 = await client.query<{ id: string }>(
         `INSERT INTO research_annexes
            (submission_id, qualification_cycle_id, annex_number, status, data,
@@ -343,9 +390,10 @@ export async function reviewQualification(
           annexCycleId,
           JSON.stringify({
             revisionNumber,
-            decision: 'approved',
+            decision: 'cancelled',
             affiliation: qualification.affiliation,
             reviewedAt,
+            generalObservations: observations,
           }),
           qualifierId,
         ],

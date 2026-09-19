@@ -96,7 +96,7 @@ export interface QualificationTask {
 
 export interface QualificationAnnex {
   id: string;
-  annexNumber: 12 | 13;
+  annexNumber: 11 | 12 | 13;
   cycleNumber: number | null;
   revisionNumber: number | null;
   decision: string | null;
