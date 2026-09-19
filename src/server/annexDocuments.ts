@@ -282,7 +282,7 @@ function applyAnnex13(xml: string, annex: GeneratedAnnexData): string {
   next = replaceText(next, '"TITULO"', `"${annex.title}"`);
   next = replaceText(next, '(NOMBRE DE LA INSTITUCIÓN)', affiliation);
   if (value(annex.data, 'decision') === 'cancelled') {
-    next = replaceText(next, 'APROBADO para su ejecución', 'NO APROBADO para su ejecución');
+    next = replaceText(next, 'APROBADO', 'NO APROBADO');
   }
   return next;
 }
