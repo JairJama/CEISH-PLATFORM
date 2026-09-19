@@ -16,8 +16,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_research_annexes_active_13
   ON research_annexes(submission_id, annex_number)
   WHERE annex_number = 13 AND status <> 'voided';
 
--- La carta de exencion solo se emite al concluir la estratificacion sin riesgo.
--- Las instalaciones existentes pueden tenerla marcada como completa desde el envio.
+-- El Anexo 11 solo se emite al aprobar la investigación.
+-- Las instalaciones existentes pueden tenerlo marcado como completo desde el envío.
 UPDATE research_annexes annex
    SET status = 'draft',
        completed_by = NULL,
@@ -27,7 +27,9 @@ UPDATE research_annexes annex
        document_updated_at = NULL,
        updated_at = NOW()
   FROM submissions submission
+  LEFT JOIN qualification_cases qualification
+    ON qualification.submission_id = submission.id
  WHERE annex.submission_id = submission.id
    AND annex.annex_number = 11
    AND annex.status = 'completed'
-   AND submission.classification_status <> 'classified';
+   AND COALESCE(qualification.status, '') <> 'approved';
