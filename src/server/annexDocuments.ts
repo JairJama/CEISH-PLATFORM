@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 const execFile = promisify(execFileCallback);
 
 export interface GeneratedAnnexData {
-  annexNumber: 11 | 23 | 27;
+  annexNumber: 11 | 12 | 13 | 23 | 27;
   researchCode: string;
   title: string;
   researcherName: string;
@@ -92,6 +92,23 @@ function fillTableRow(xml: string, label: string, values: string[]): string {
   });
 }
 
+function fillLastTableCell(xml: string, label: string, content: string, occurrence = 1): string {
+  let updated = false;
+  let matches = 0;
+  return xml.replace(/<w:tr\b[\s\S]*?<\/w:tr>/g, (row) => {
+    if (updated || !plainText(row).includes(label)) return row;
+    matches += 1;
+    if (matches !== occurrence) return row;
+    const cells = row.match(/<w:tc\b[\s\S]*?<\/w:tc>/g);
+    if (!cells?.length) return row;
+    updated = true;
+    const lastCell = cells.length - 1;
+    const replaced = cells.map((cell, index) => index === lastCell ? writeCellText(cell, content) : cell);
+    let cursor = 0;
+    return row.replace(/<w:tc\b[\s\S]*?<\/w:tc>/g, () => replaced[cursor++]);
+  });
+}
+
 function replaceRiskConclusion(xml: string, conclusion: string): string {
   let updated = false;
   return xml.replace(/<w:p\b[\s\S]*?<\/w:p>/g, (paragraph) => {
@@ -110,7 +127,9 @@ function replaceRiskConclusion(xml: string, conclusion: string): string {
 
 function value(data: Record<string, unknown>, key: string, fallback = ''): string {
   const item = data[key];
-  return typeof item === 'string' && item.trim() ? item.trim() : fallback;
+  if (typeof item === 'string') return item.trim() || fallback;
+  if (typeof item === 'number' || typeof item === 'boolean') return String(item);
+  return fallback;
 }
 
 function formatDate(raw: string): string {
@@ -148,6 +167,121 @@ function applyAnnex11(xml: string, annex: GeneratedAnnexData): string {
     const date = document ? formatDate(document.uploadedAt) : '—';
     next = fillTableRow(next, row, [name, '—', date]);
   });
+  return next;
+}
+
+const ANNEX_12_TEMPLATE_ANCHORS: Record<string, string> = {
+  title: 'Refleja el contenido',
+  'problem-justification': 'Valor social',
+  'problem-description': 'Es Claro y Preciso',
+  'theoretical-foundation': '¿Es específica del',
+  objectives: 'Son Claros, precisos',
+  hypothesis: 'Está fundamentada en el',
+  'hypothesis-bioethics': 'Toca aspectos Bioéticos',
+  'method-study-type': 'Señala el tipo de estudio',
+  'method-population-sample': 'Universo y muestra',
+  'method-inclusion-exclusion': 'Tiene criterios de inclusión',
+  'method-variables': 'Las variables son',
+  'method-data-collection': 'Está claro el procedimiento',
+  'method-tools': 'Se incluye las herramientas',
+  'method-recruitment': 'Explica cómo se reclutan',
+  'method-resources-timeline': 'Recursos y cronograma',
+  'method-bioethics': 'Toca aspectos Bioéticos',
+  'ethics-confidentiality': 'Confidencialidad',
+  'ethics-autonomy': 'Autonomía de participantes',
+  'ethics-animals': 'Cumple con las normas',
+  'ethics-plants': 'Cumple con aspectos éticos',
+  'ethics-environment': 'La investigación protege el',
+  'ethics-risk-benefit': 'Balance riesgo beneficio',
+  'ethics-resource-distribution': 'distribución equitativa',
+  'ethics-vulnerable-population': 'Protección de población',
+  'ethics-fair-selection': 'Selección equitativa',
+  'ethics-consent-process': 'Descripción del proceso',
+  'ethics-consent-document': 'Documento consentimiento',
+  'ethics-conflict-interest': 'Declaración de conflicto',
+  'ethics-conscientious-objection': 'Declaración de Objeción',
+  'ethics-commercial-agency': 'Investigación relacionada con',
+  'legal-researcher-suitability': 'Idoneidad de investigadores',
+  'legal-bioethics-training': 'formación básica en bioética',
+  'legal-participant-benefits': 'beneficiados con los',
+  'legal-results-disclosure': 'informados de los resultados',
+  'legal-compensation': 'compensación de',
+  'legal-insurance': 'considerado una póliza',
+  'legal-sensitive-information': 'información sensible',
+  'legal-national-heritage': 'patrimonio del',
+  'legal-other': 'OTRO, Especificar',
+  references: 'Cumple con el formato exigido',
+};
+
+const ANNEX_12_TEMPLATE_OCCURRENCES: Partial<Record<string, number>> = {
+  'hypothesis-bioethics': 2,
+  'method-bioethics': 3,
+};
+
+function checklistResultLabel(result: unknown): string {
+  if (result === 'complies') return 'CUMPLE';
+  if (result === 'does-not-comply') return 'NO CUMPLE';
+  if (result === 'not-applicable') return 'NO APLICA';
+  return 'SIN RESPUESTA';
+}
+
+function applyAnnex12(xml: string, annex: GeneratedAnnexData): string {
+  const affiliation = value(annex.data, 'affiliation', 'No registrada');
+  const issueDate = value(annex.data, 'reviewedAt');
+  let next = fillTableRow(xml, 'Título de laInvestigación:', [annex.title]);
+  next = fillTableRow(next, 'Código:', [annex.researchCode]);
+  next = fillTableRow(next, 'Tipo de Investigación:', [value(annex.data, 'researchType', 'Investigación sin riesgo')]);
+  next = fillTableRow(next, 'Carrera/Instituto:', [affiliation]);
+  next = fillTableRow(next, 'Lugar a Efectuarse:', [value(annex.data, 'location', 'No registrado')]);
+  next = fillTableRow(next, 'Entidad Patrocinadora', [value(annex.data, 'sponsor', 'No aplica')]);
+  next = fillTableRow(next, 'Instituciones/CentrosInvolucrados:', [value(annex.data, 'involvedInstitutions', affiliation)]);
+  next = fillTableRow(next, 'Financiamiento', [value(annex.data, 'funding', 'No aplica')]);
+  next = fillTableRow(next, 'Institución/esResponsables:', [value(annex.data, 'responsibleInstitutions', affiliation)]);
+  next = fillTableRow(next, 'Investigador Principal.', [
+    `${annex.researcherName} · Cédula: ${value(annex.data, 'researcherId', 'No registrada')} · ${value(annex.data, 'researcherDegree', 'Título no registrado')}`,
+  ]);
+  next = fillTableRow(next, 'Fecha de Comienzo:', [value(annex.data, 'startDate', 'No registrada')]);
+  next = fillTableRow(next, 'Facha Propuesta deCulminación:', [value(annex.data, 'endDate', 'No registrada')]);
+  next = fillTableRow(next, 'Fecha de Recepción:', [formatDate(value(annex.data, 'receivedAt', issueDate))]);
+
+  const checklist = Array.isArray(annex.data.checklist) ? annex.data.checklist : [];
+  for (const rawItem of checklist) {
+    if (!rawItem || typeof rawItem !== 'object') continue;
+    const item = rawItem as Record<string, unknown>;
+    const id = value(item, 'id');
+    const anchor = ANNEX_12_TEMPLATE_ANCHORS[id];
+    if (!anchor) continue;
+    const detail = value(item, 'observations');
+    next = fillLastTableCell(
+      next,
+      anchor,
+      `${checklistResultLabel(item.result)}${detail ? ` — ${detail}` : ''}`,
+      ANNEX_12_TEMPLATE_OCCURRENCES[id] ?? 1,
+    );
+  }
+
+  const general = value(annex.data, 'generalObservations');
+  if (general) {
+    next = replaceText(next, '(Firma del miembro evaluador CEISH-Uleam)', `Observaciones generales: ${general}\n\n(Firma del miembro evaluador CEISH-Uleam)`);
+  }
+  next = replaceText(next, 'Nombres y Apellidos', annex.memberName);
+  next = replaceText(next, 'Fecha: ______________________________________', `Fecha: ${formatDate(issueDate)}`);
+  return next;
+}
+
+function applyAnnex13(xml: string, annex: GeneratedAnnexData): string {
+  const affiliation = value(annex.data, 'affiliation', 'Universidad Laica Eloy Alfaro de Manabí');
+  const reviewedAt = formatDate(value(annex.data, 'reviewedAt'));
+  let next = replaceText(xml, 'Nombre del Investigador Principal', annex.researcherName);
+  next = replaceText(next, 'INSTITUCIÓN A LA QUE PERTENECE', affiliation);
+  next = replaceText(next, '___________', annex.researcherName);
+  next = replaceText(next, '______________', annex.title);
+  next = replaceText(next, 'día-mes-año', reviewedAt);
+  next = replaceText(next, '(número de versión)', `(revisión ${value(annex.data, 'revisionNumber', '1')})`);
+  next = replaceText(next, 'XXXX XXXX XXXX', annex.researchCode);
+  next = replaceText(next, 'INDICAR EL NOMBRE DE LA INSTITUCIÓN', affiliation);
+  next = replaceText(next, '"TITULO"', `"${annex.title}"`);
+  next = replaceText(next, '(NOMBRE DE LA INSTITUCIÓN)', affiliation);
   return next;
 }
 
@@ -223,7 +357,11 @@ export async function generateAnnexDocx(annex: GeneratedAnnexData): Promise<Buff
     const source = await readFile(documentXmlPath, 'utf8');
     const transformed = annex.annexNumber === 11
       ? applyAnnex11(source, annex)
-      : annex.annexNumber === 23 ? applyAnnex23(source, annex) : applyAnnex27(source, annex);
+      : annex.annexNumber === 12
+        ? applyAnnex12(source, annex)
+        : annex.annexNumber === 13
+          ? applyAnnex13(source, annex)
+          : annex.annexNumber === 23 ? applyAnnex23(source, annex) : applyAnnex27(source, annex);
     await writeFile(documentXmlPath, transformed);
     await execFile('zip', ['-q', '-r', outputPath, '.'], { cwd: extractedDirectory });
     return readFile(outputPath);

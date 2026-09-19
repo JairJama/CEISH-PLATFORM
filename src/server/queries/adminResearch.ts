@@ -18,7 +18,11 @@ export interface AdminResearchRow {
   qualifier_email: string | null;
   annexes: Array<{
     id: string;
-    annexNumber: 11 | 23 | 27;
+    annexNumber: 11 | 12 | 13 | 23 | 27;
+    cycleNumber: number | null;
+    revisionNumber: number | null;
+    decision: string | null;
+    createdAt: string;
     documentName: string;
     documentReady: boolean;
   }>;
@@ -45,10 +49,15 @@ export async function listAdminResearch(): Promise<AdminResearchRow[]> {
          SELECT json_agg(json_build_object(
            'id', annex.id,
            'annexNumber', annex.annex_number,
+           'cycleNumber', cycle.cycle_number,
+           'revisionNumber', annex.data->'revisionNumber',
+           'decision', annex.data->>'decision',
+           'createdAt', annex.created_at,
            'documentName', COALESCE(annex.document_name, 'Anexo-' || annex.annex_number || '.docx'),
            'documentReady', annex.document_path IS NOT NULL
          ) ORDER BY annex.annex_number, annex.created_at) AS items
            FROM research_annexes annex
+           LEFT JOIN qualification_cycles cycle ON cycle.id = annex.qualification_cycle_id
           WHERE annex.submission_id = s.id
             AND annex.status <> 'voided'
             AND annex.status = 'completed'

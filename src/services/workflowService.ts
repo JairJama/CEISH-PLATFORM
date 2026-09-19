@@ -1,5 +1,6 @@
 import { apiGet } from './http';
 import { storageService } from './storage';
+import type { Annex12ChecklistItem } from '../shared/annex12';
 
 export type RegistrationStatus = 'pending' | 'approved' | 'rejected';
 export type ResearcherType = 'internal' | 'external';
@@ -90,6 +91,18 @@ export interface QualificationTask {
   correction_document_name: string | null;
   correction_submitted_at: string | null;
   updated_at: string;
+  annexes: QualificationAnnex[];
+}
+
+export interface QualificationAnnex {
+  id: string;
+  annexNumber: 12 | 13;
+  cycleNumber: number | null;
+  revisionNumber: number | null;
+  decision: string | null;
+  createdAt: string;
+  documentName: string;
+  documentReady: boolean;
 }
 
 export interface AdminResearchItem {
@@ -110,7 +123,11 @@ export interface AdminResearchItem {
   qualifier_email: string | null;
   annexes: Array<{
     id: string;
-    annexNumber: 11 | 23 | 27;
+    annexNumber: 11 | 12 | 13 | 23 | 27;
+    cycleNumber?: number | null;
+    revisionNumber?: number | null;
+    decision?: string | null;
+    createdAt?: string;
     documentName: string;
     documentReady: boolean;
   }>;
@@ -192,14 +209,11 @@ export const workflowService = {
 
   reviewQualification(
     id: string,
-    hasObservations: boolean,
+    decision: 'approved' | 'corrections-required' | 'cancelled',
     observations: string,
+    checklist: Annex12ChecklistItem[],
   ): Promise<{ result: string; message: string }> {
-    return apiPatch(`/api/qualifications/${id}/review`, { hasObservations, observations });
-  },
-
-  cancelQualification(id: string): Promise<{ message: string }> {
-    return apiPatch(`/api/qualifications/${id}/cancel`, {});
+    return apiPatch(`/api/qualifications/${id}/review`, { decision, observations, checklist });
   },
 
   async submitCorrection(id: string, file: File): Promise<{ message: string }> {
