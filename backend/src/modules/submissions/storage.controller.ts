@@ -137,8 +137,30 @@ export class StorageController {
 
     try {
       const stream = await this.minioService.getObjectStream(sub.document_path);
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", "inline");
+      const filename = sub.document_name || "documento";
+      const isDocx = filename.toLowerCase().endsWith(".docx");
+      const isDoc = filename.toLowerCase().endsWith(".doc");
+
+      if (isDocx) {
+        res.setHeader(
+          "Content-Type",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        );
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${encodeURIComponent(filename)}"`,
+        );
+      } else if (isDoc) {
+        res.setHeader("Content-Type", "application/msword");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${encodeURIComponent(filename)}"`,
+        );
+      } else {
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", "inline");
+      }
+
       (stream as any).pipe(res);
     } catch {
       throw new NotFoundException(
