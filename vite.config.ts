@@ -9,7 +9,19 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   Object.assign(process.env, env)
 
+  const useNestBackend = process.env.VITE_USE_NEST_BACKEND === 'true'
+
   return {
-    plugins: [react(), apiPlugin()],
+    plugins: [react(), ...(useNestBackend ? [] : [apiPlugin()])],
+    server: {
+      proxy: useNestBackend
+        ? {
+            '/api': {
+              target: process.env.BACKEND_URL || 'http://localhost:3000',
+              changeOrigin: true,
+            },
+          }
+        : undefined,
+    },
   }
 })

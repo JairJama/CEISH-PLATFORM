@@ -1,0 +1,281 @@
+// ============================================================
+// CEISH Platform - Prisma Schema (Sincronizado con PostgreSQL)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id    String @id @default(uuid()) @db.Uuid
+  name  String @unique @db.VarChar(40)
+  users User[]
+
+  @@map("roles")
+}
+
+model User {
+  id                 String              @id @default(uuid()) @db.Uuid
+  name               String              @db.VarChar(120)
+  email              String              @unique @db.VarChar(255)
+  password           String              @db.VarChar(255)
+  roleId             String              @map("role_id") @db.Uuid
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  role               Role                @relation(fields: [roleId], references: [id])
+  researcherProfile  ResearcherProfile?
+  submissions        Submission[]
+  stratificationTasks StratificationAssignment[]
+  qualificationTasks QualificationCase[]
+  reviews            Review[]
+  teacherAssignments Assignment[]        @relation("TeacherAssignments")
+  studentAssignments Assignment[]        @relation("StudentAssignments")
+
+  @@index([roleId], map: "idx_users_role")
+  @@map("users")
+}
+
+model RegistrationRequest {
+  id             String    @id @default(uuid()) @db.Uuid
+  name           String    @db.VarChar(120)
+  email          String    @unique @db.VarChar(255)
+  passwordHash   String    @map("password_hash") @db.VarChar(255)
+  researcherType String    @map("researcher_type") @db.VarChar(20)
+  affiliation    String    @default("") @db.VarChar(180)
+  status         String    @default("pending") @db.VarChar(20)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  reviewedAt     DateTime? @map("reviewed_at") @db.Timestamptz
+  reviewedBy     String?   @map("reviewed_by") @db.Uuid
+
+  @@index([status], map: "idx_registration_requests_status")
+  @@map("registration_requests")
+}
+
+model ResearcherProfile {
+  userId         String   @id @map("user_id") @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  researcherType String   @map("researcher_type") @db.VarChar(20)
+  affiliation    String   @default("") @db.VarChar(180)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("researcher_profiles")
+}
+
+model Submission {
+  id                    String                     @id @default(uuid()) @db.Uuid
+  studentId             String                     @map("student_id") @db.Uuid
+  student               User                       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  researchCode          String                     @unique @map("research_code") @db.VarChar(11)
+  title                 String                     @db.Text
+  documentName          String                     @map("document_name") @db.VarChar(255)
+  documentPath          String?                    @map("document_path") @db.Text
+  comment               String                     @default("") @db.Text
+  status                String                     @default("pending") @db.VarChar(20)
+  submittedAt           DateTime                   @default(now()) @map("submitted_at") @db.Timestamptz
+  reviewedAt            DateTime?                  @map("reviewed_at") @db.Timestamptz
+  grade                 Decimal?                   @db.Decimal(4, 2)
+  finalComment          String?                    @map("final_comment") @db.Text
+  classificationStatus  String                     @default("awaiting-assignment") @map("classification_status") @db.VarChar(30)
+  riskLevel             String?                    @map("risk_level") @db.VarChar(30)
+  classifiedAt          DateTime?                  @map("classified_at") @db.Timestamptz
+  documents             SubmissionDocument[]
+  stratifications       StratificationAssignment[]
+  annexes               ResearchAnnex[]
+  qualificationCase     QualificationCase?
+  review                Review?
+
+  @@index([studentId], map: "idx_submissions_student")
+  @@index([status], map: "idx_submissions_status")
+  @@map("submissions")
+}
+
+model SubmissionDocument {
+  id           String     @id @default(uuid()) @db.Uuid
+  submissionId String     @map("submission_id") @db.Uuid
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  documentName String     @map("document_name") @db.VarChar(255)
+  documentPath String     @map("document_path") @db.Text
+  mimeType     String     @map("mime_type") @db.VarChar(120)
+  sizeBytes    BigInt     @map("size_bytes")
+  uploadedAt   DateTime   @default(now()) @map("uploaded_at") @db.Timestamptz
+
+  @@unique([submissionId, documentPath], map: "submission_documents_path_unique")
+  @@index([submissionId, uploadedAt], map: "idx_submission_documents_submission")
+  @@map("submission_documents")
+}
+
+model StratificationAssignment {
+  id           String          @id @default(uuid()) @db.Uuid
+  submissionId String          @map("submission_id") @db.Uuid
+  submission   Submission      @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  stratifierId String          @map("stratifier_id") @db.Uuid
+  stratifier   User            @relation(fields: [stratifierId], references: [id])
+  roundNumber  Int             @map("round_number") @db.SmallInt
+  riskLevel    String?         @map("risk_level") @db.VarChar(30)
+  assignedAt   DateTime        @default(now()) @map("assigned_at") @db.Timestamptz
+  decidedAt    DateTime?       @map("decided_at") @db.Timestamptz
+  annexes      ResearchAnnex[]
+
+  @@unique([submissionId, roundNumber], map: "stratification_round_unique")
+  @@unique([submissionId, stratifierId], map: "stratification_member_unique")
+  @@index([stratifierId, decidedAt], map: "idx_stratification_member")
+  @@index([submissionId], map: "idx_stratification_submission")
+  @@map("stratification_assignments")
+}
+
+model ResearchAnnex {
+  id                   String                    @id @default(uuid()) @db.Uuid
+  submissionId         String                    @map("submission_id") @db.Uuid
+  submission           Submission                @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  assignmentId         String?                   @map("assignment_id") @db.Uuid
+  assignment           StratificationAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  annexNumber          Int                       @map("annex_number") @db.SmallInt
+  qualificationCycleId String?                   @map("qualification_cycle_id") @db.Uuid
+  qualificationCycle   QualificationCycle?       @relation(fields: [qualificationCycleId], references: [id], onDelete: SetNull)
+  status               String                    @default("draft") @db.VarChar(20)
+  data                 Json                      @default("{}")
+  documentName         String?                   @map("document_name") @db.VarChar(255)
+  documentPath         String?                   @map("document_path") @db.Text
+  documentUpdatedAt    DateTime?                 @map("document_updated_at") @db.Timestamptz
+  createdBy            String                    @map("created_by") @db.Uuid
+  completedBy          String?                   @map("completed_by") @db.Uuid
+  createdAt            DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime                  @default(now()) @map("updated_at") @db.Timestamptz
+  completedAt          DateTime?                 @map("completed_at") @db.Timestamptz
+
+  @@index([submissionId, annexNumber, createdAt(sort: Desc)], map: "idx_research_annexes_submission")
+  @@index([assignmentId, annexNumber, createdAt(sort: Desc)], map: "idx_research_annexes_assignment")
+  @@index([completedBy, annexNumber], map: "idx_research_annexes_completed_by")
+  @@index([qualificationCycleId, annexNumber, createdAt(sort: Desc)], map: "idx_research_annexes_qualification_cycle")
+  @@map("research_annexes")
+}
+
+model QualificationCase {
+  id           String               @id @default(uuid()) @db.Uuid
+  submissionId String               @unique @map("submission_id") @db.Uuid
+  submission   Submission           @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  qualifierId  String               @map("qualifier_id") @db.Uuid
+  qualifier    User                 @relation(fields: [qualifierId], references: [id])
+  status       String               @default("pending-review") @db.VarChar(30)
+  currentCycle Int                  @default(1) @map("current_cycle") @db.SmallInt
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime             @default(now()) @map("updated_at") @db.Timestamptz
+  completedAt  DateTime?            @map("completed_at") @db.Timestamptz
+  cancelledAt  DateTime?            @map("cancelled_at") @db.Timestamptz
+  cycles       QualificationCycle[]
+
+  @@index([qualifierId, status], map: "idx_qualification_qualifier")
+  @@map("qualification_cases")
+}
+
+model QualificationCycle {
+  id                     String          @id @default(uuid()) @db.Uuid
+  qualificationId        String          @map("qualification_id") @db.Uuid
+  qualification          QualificationCase @relation(fields: [qualificationId], references: [id], onDelete: Cascade)
+  cycleNumber            Int             @map("cycle_number") @db.SmallInt
+  status                 String          @default("pending-review") @db.VarChar(30)
+  observations           String          @default("") @db.Text
+  correctionDueAt        DateTime?       @map("correction_due_at") @db.Timestamptz
+  correctionDocumentName String?         @map("correction_document_name") @db.VarChar(255)
+  correctionDocumentPath String?         @map("correction_document_path") @db.Text
+  correctionSubmittedAt  DateTime?       @map("correction_submitted_at") @db.Timestamptz
+  reviewedAt             DateTime?       @map("reviewed_at") @db.Timestamptz
+  createdAt              DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  annexes                ResearchAnnex[]
+
+  @@unique([qualificationId, cycleNumber], map: "qualification_cycle_unique")
+  @@index([qualificationId, cycleNumber], map: "idx_qualification_cycles_case")
+  @@map("qualification_cycles")
+}
+
+model Assignment {
+  id        String   @id @default(uuid()) @db.Uuid
+  teacherId String   @map("teacher_id") @db.Uuid
+  teacher   User     @relation("TeacherAssignments", fields: [teacherId], references: [id], onDelete: Cascade)
+  studentId String   @map("student_id") @db.Uuid
+  student   User     @relation("StudentAssignments", fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([teacherId, studentId], map: "assignments_unique")
+  @@index([teacherId], map: "idx_assignments_teacher")
+  @@index([studentId], map: "idx_assignments_student")
+  @@map("assignments")
+}
+
+model Review {
+  id           String        @id @default(uuid()) @db.Uuid
+  submissionId String        @unique @map("submission_id") @db.Uuid
+  submission   Submission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewerId   String        @map("reviewer_id") @db.Uuid
+  reviewer     User          @relation(fields: [reviewerId], references: [id])
+  comment      String        @default("") @db.Text
+  grade        Decimal?      @db.Decimal(4, 2)
+  status       String        @default("in-progress") @db.VarChar(20)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  stages       ReviewStage[]
+
+  @@index([reviewerId], map: "idx_reviews_reviewer")
+  @@map("reviews")
+}
+
+model ReviewStage {
+  id           String               @id @default(uuid()) @db.Uuid
+  reviewId     String               @map("review_id") @db.Uuid
+  review       Review               @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  stageNumber  Int                  @map("stage_number") @db.SmallInt
+  status       String               @default("pending") @db.VarChar(20)
+  completedAt  DateTime?            @map("completed_at") @db.Timestamptz
+  criteria     CriteriaEvaluation[]
+
+  @@unique([reviewId, stageNumber], map: "review_stages_unique")
+  @@index([reviewId], map: "idx_review_stages_review")
+  @@map("review_stages")
+}
+
+model CriteriaEvaluation {
+  id          String        @id @default(uuid()) @db.Uuid
+  stageId     String        @map("stage_id") @db.Uuid
+  stage       ReviewStage   @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  criterion   String        @db.Text
+  status      String        @default("pending") @db.VarChar(20)
+  comment     String        @default("") @db.Text
+  annotations Annotation[]
+
+  @@index([stageId], map: "idx_criteria_stage")
+  @@map("criteria_evaluations")
+}
+
+model Annotation {
+  id                   String             @id @default(uuid()) @db.Uuid
+  criteriaEvaluationId String             @map("criteria_evaluation_id") @db.Uuid
+  criteriaEvaluation   CriteriaEvaluation @relation(fields: [criteriaEvaluationId], references: [id], onDelete: Cascade)
+  pageNumber           Int                @map("page_number") @db.SmallInt
+  x                    Decimal            @db.Decimal(8, 4)
+  y                    Decimal            @db.Decimal(8, 4)
+  width                Decimal            @db.Decimal(8, 4)
+  height               Decimal            @db.Decimal(8, 4)
+  comment              String             @default("") @db.Text
+
+  @@index([criteriaEvaluationId], map: "idx_annotations_criteria")
+  @@map("annotations")
+}
+
+model WorkflowEvent {
+  id              String   @id @default(uuid()) @db.Uuid
+  eventType       String   @map("event_type") @db.VarChar(60)
+  actorId         String?  @map("actor_id") @db.Uuid
+  investigationId String?  @map("investigation_id") @db.Uuid
+  entityType      String?  @map("entity_type") @db.VarChar(40)
+  entityId       String?  @map("entity_id") @db.Uuid
+  previousStatus String?  @map("previous_status") @db.VarChar(40)
+  newStatus      String?  @map("new_status") @db.VarChar(40)
+  metadata       Json?
+  description    String?  @db.Text
+  occurredAt     DateTime @default(now()) @map("occurred_at") @db.Timestamptz
+
+  @@map("workflow_events")
+}
