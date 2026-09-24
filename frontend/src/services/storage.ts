@@ -1,6 +1,7 @@
 // Servicio de almacenamiento — el frontend sube y obtiene documentos PDF.
 // El archivo viaja como multipart/form-data al middleware, que lo guarda en
 // MinIO. El navegador nunca habla directamente con el object storage.
+import { apiErrorMessage, apiFetch } from './http';
 
 export interface UploadResult {
   documentPath: string;
@@ -31,8 +32,7 @@ export function validateResearchDocument(file: File): string | null {
 }
 
 async function unwrapError(res: Response): Promise<never> {
-  const body = await res.json().catch(() => ({}));
-  throw new Error((body as { error?: string }).error ?? `Error ${res.status}`);
+  throw new Error(await apiErrorMessage(res));
 }
 
 export const storageService = {
@@ -40,21 +40,21 @@ export const storageService = {
   async uploadDocument(file: File): Promise<UploadResult> {
     const form = new FormData();
     form.append('file', file);
-    const res = await fetch('/api/upload', { method: 'POST', body: form });
+    const res = await apiFetch('/api/upload', { method: 'POST', body: form });
     if (!res.ok) await unwrapError(res);
     return res.json() as Promise<UploadResult>;
   },
 
   /** Obtiene una URL temporal firmada para visualizar el documento de una entrega. */
   async getDocumentUrl(submissionId: string): Promise<string> {
-    const res = await fetch(`/api/documents/${submissionId}`);
+    const res = await apiFetch(`/api/documents/${submissionId}`);
     if (!res.ok) await unwrapError(res);
     const data = (await res.json()) as { url: string };
     return data.url;
   },
 
   async getResearchDocumentUrl(documentId: string): Promise<string> {
-    const res = await fetch(`/api/submission-documents/${documentId}`);
+    const res = await apiFetch(`/api/submission-documents/${documentId}`);
     if (!res.ok) await unwrapError(res);
     const data = (await res.json()) as { url: string };
     return data.url;

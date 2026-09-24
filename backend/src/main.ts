@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
+import { assertSessionConfiguration } from "./common/auth/session.util";
 
 const appConfig = {
   port: Number(process.env.APP_PORT ?? 3000),
@@ -13,23 +14,26 @@ const appConfig = {
 };
 
 async function bootstrap() {
+  assertSessionConfiguration();
   const app = await NestFactory.create(AppModule);
 
-  app.use(
-    cookieParser(
-      process.env.SESSION_SECRET ??
-        "ceish-development-secret-change-before-production",
-    ),
-  );
+  app.use(cookieParser());
 
   app.setGlobalPrefix("api");
 
+  const allowedOrigins = new Set(
+    appConfig.corsOrigin
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  );
+  if (process.env.NODE_ENV !== "production") {
+    allowedOrigins.add("http://localhost:5173");
+    allowedOrigins.add("http://127.0.0.1:5173");
+  }
+
   app.enableCors({
-    origin: [
-      appConfig.corsOrigin,
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-    ],
+    origin: [...allowedOrigins],
     credentials: true,
   });
 

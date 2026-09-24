@@ -1,5 +1,6 @@
 // src/services/authService.ts
 // Corre en el NAVEGADOR — solo fetch, sin pg ni minio
+import { apiErrorMessage, apiFetch, apiRequest } from './http';
 
 export interface AuthUser {
   id: string;
@@ -39,21 +40,17 @@ export async function login(
   password: string
 ): Promise<LoginResult> {
   try {
-    const res = await fetch('/api/auth/login', {
+    const res = await apiFetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await res.json();
-
     if (!res.ok) {
-      return {
-        success: false,
-        error: data.error ?? 'Error al iniciar sesión',
-      };
+      return { success: false, error: await apiErrorMessage(res, 'Error al iniciar sesión') };
     }
 
+    const data = await res.json() as { user: AuthUser };
     return { success: true, user: data.user };
   } catch {
     return {
@@ -65,26 +62,29 @@ export async function login(
 
 export async function register(request: RegistrationRequest): Promise<RegistrationResult> {
   try {
-    const res = await fetch('/api/auth/register', {
+    const res = await apiFetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
     });
-    const data = await res.json();
-    return res.ok
-      ? { success: true, message: data.message }
-      : { success: false, error: data.error ?? 'No se pudo enviar la solicitud' };
+    if (!res.ok) {
+      return { success: false, error: await apiErrorMessage(res, 'No se pudo enviar la solicitud') };
+    }
+    const data = await res.json() as { message: string };
+    return { success: true, message: data.message };
   } catch {
     return { success: false, error: 'Error de conexión. Verifica tu red e intenta de nuevo.' };
   }
 }
 
 export async function getSession(): Promise<AuthUser | null> {
-  const res = await fetch('/api/auth/session');
-  if (!res.ok) return null;
-  return res.json() as Promise<AuthUser>;
+  try {
+    return await apiRequest<AuthUser>('/api/auth/session');
+  } catch {
+    return null;
+  }
 }
 
 export async function logout(): Promise<void> {
-  await fetch('/api/auth/logout', { method: 'POST' });
+  await apiRequest('/api/auth/logout', { method: 'POST' });
 }

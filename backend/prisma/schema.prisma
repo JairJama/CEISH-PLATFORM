@@ -24,6 +24,7 @@ model User {
   name               String              @db.VarChar(120)
   email              String              @unique @db.VarChar(255)
   password           String              @db.VarChar(255)
+  authSessionVersion Int                 @default(0) @map("auth_session_version")
   roleId             String              @map("role_id") @db.Uuid
   createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz
   role               Role                @relation(fields: [roleId], references: [id])

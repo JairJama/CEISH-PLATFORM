@@ -1,23 +1,33 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
   Param,
   Patch,
+  UsePipes,
+  ValidationPipe,
   UseGuards,
 } from "@nestjs/common";
+import { IsIn } from "class-validator";
 import { RegistrationRequestsService } from "./registration-requests.service";
 import { AuthGuard, RolesGuard } from "../../common/guards";
 import { CurrentUser, Roles } from "../../common/decorators";
 import type { SessionUser } from "../../common/auth/session.util";
 
 class ReviewDecisionDto {
+  @IsIn(["approved", "rejected"])
   decision!: "approved" | "rejected";
 }
 
 @Controller("registration-requests")
 @UseGuards(AuthGuard, RolesGuard)
+@UsePipes(
+  new ValidationPipe({
+    transform: true,
+    whitelist: true,
+    forbidNonWhitelisted: true,
+  }),
+)
 export class RegistrationRequestsController {
   constructor(private readonly requestsService: RegistrationRequestsService) {}
 
@@ -34,9 +44,6 @@ export class RegistrationRequestsController {
     @Body() body: ReviewDecisionDto,
     @CurrentUser() user: SessionUser,
   ) {
-    if (body.decision !== "approved" && body.decision !== "rejected") {
-      throw new BadRequestException("La decisión debe ser approved o rejected");
-    }
     return this.requestsService.reviewRequest(id, body.decision, user.id);
   }
 }

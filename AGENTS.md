@@ -11,9 +11,10 @@
 ## Arquitectura actual
 
 - El frontend usa React 19, TypeScript, Vite, React Router y Zustand.
-- La API temporal vive en `src/server/apiPlugin.ts`; las consultas PostgreSQL están en `src/server/queries/`.
+- El frontend React/Vite vive en `frontend/`; NestJS vive en `backend/`.
+- La API temporal de Vite vive en `frontend/src/server/apiPlugin.ts`; las consultas transitorias están en `frontend/src/server/queries/`.
 - PostgreSQL conserva metadatos y MinIO almacena documentos. El navegador nunca debe conectarse directamente a esos servicios.
-- La migración futura a NestJS debe mantener, inicialmente, los contratos `/api/*` consumidos por `src/services/`.
+- NestJS es la API de referencia y debe mantener los contratos `/api/*` consumidos por `frontend/src/services/`.
 - Las migraciones aplicadas son inmutables. Los cambios de esquema se agregan en un archivo nuevo y se reflejan también en `database/schema.sql` para instalaciones limpias.
 
 ## Flujo CEISH y anexos

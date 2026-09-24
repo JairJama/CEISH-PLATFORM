@@ -22,9 +22,9 @@ export class UsersService {
       id: u.id,
       name: u.name,
       email: u.email,
-      role: normalizeRole(u.role.name),
-      createdAt: u.createdAt,
-      researcherType: u.researcherProfile?.researcherType,
+      role: normalizeRole(u.role.name) ?? u.role.name,
+      created_at: u.createdAt,
+      researcher_type: u.researcherProfile?.researcherType,
       affiliation: u.researcherProfile?.affiliation,
     }));
   }
@@ -43,9 +43,9 @@ export class UsersService {
       id: a.student.id,
       name: a.student.name,
       email: a.student.email,
-      role: normalizeRole(a.student.role.name),
-      createdAt: a.student.createdAt,
-      researcherType: a.student.researcherProfile?.researcherType,
+      role: normalizeRole(a.student.role.name) ?? a.student.role.name,
+      created_at: a.student.createdAt,
+      researcher_type: a.student.researcherProfile?.researcherType,
       affiliation: a.student.researcherProfile?.affiliation,
     }));
   }
@@ -60,9 +60,9 @@ export class UsersService {
       id: u.id,
       name: u.name,
       email: u.email,
-      role: normalizeRole(u.role.name),
-      createdAt: u.createdAt,
-      researcherType: u.researcherProfile?.researcherType,
+      role: normalizeRole(u.role.name) ?? u.role.name,
+      created_at: u.createdAt,
+      researcher_type: u.researcherProfile?.researcherType,
       affiliation: u.researcherProfile?.affiliation,
     };
   }

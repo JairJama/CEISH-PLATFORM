@@ -8,6 +8,8 @@ import { promisify } from "node:util";
 import type { Request, Response } from "express";
 
 const scrypt = promisify(scryptCallback);
+const DEVELOPMENT_SESSION_SECRET =
+  "ceish-development-secret-change-before-production";
 
 export const COOKIE_NAME = "ceish_session";
 export const MAX_AGE_SECONDS = 60 * 60 * 8; // 8 horas
@@ -18,9 +20,10 @@ export interface SessionUser {
   id: string;
   role: UserRole;
   exp: number;
+  sessionVersion: number;
 }
 
-export function normalizeRole(role: unknown): UserRole {
+export function normalizeRole(role: unknown): UserRole | null {
   const aliases: Record<string, UserRole> = {
     student: "student",
     admin: "admin",
@@ -39,14 +42,35 @@ export function normalizeRole(role: unknown): UserRole {
           .toLowerCase()
           .replace(/[\s-]+/g, "_")
       : "";
-  return aliases[normalized] ?? "student";
+  return aliases[normalized] ?? null;
 }
 
 function secret(): string {
-  return (
-    process.env.SESSION_SECRET ??
-    "ceish-development-secret-change-before-production"
-  );
+  const configured = process.env.SESSION_SECRET;
+  if (process.env.NODE_ENV === "production") {
+    if (!configured || configured.length < 32) {
+      throw new Error(
+        "SESSION_SECRET must contain at least 32 characters in production",
+      );
+    }
+    return configured;
+  }
+  return configured ?? DEVELOPMENT_SESSION_SECRET;
+}
+
+export function assertSessionConfiguration(): void {
+  if (process.env.NODE_ENV !== "production") return;
+  const configured = process.env.SESSION_SECRET;
+  if (
+    !configured ||
+    configured.length < 32 ||
+    configured === DEVELOPMENT_SESSION_SECRET ||
+    configured.startsWith("replace-with-")
+  ) {
+    throw new Error(
+      "Set SESSION_SECRET to a unique random value of at least 32 characters in production",
+    );
+  }
 }
 
 function encode(value: unknown): string {
@@ -79,10 +103,20 @@ export function getSessionFromRequest(req: Request): SessionUser | null {
   try {
     const value = JSON.parse(
       Buffer.from(encoded, "base64url").toString("utf8"),
-    ) as SessionUser;
+    ) as Partial<SessionUser>;
     const role = normalizeRole(value.role);
-    if (value.id && role && value.exp > Date.now() / 1000) {
-      return { id: value.id, role, exp: value.exp };
+    const sessionVersion = value.sessionVersion ?? 0;
+    if (
+      typeof value.id === "string" &&
+      value.id.length > 0 &&
+      role &&
+      typeof value.exp === "number" &&
+      Number.isFinite(value.exp) &&
+      Number.isSafeInteger(sessionVersion) &&
+      sessionVersion >= 0 &&
+      value.exp > Date.now() / 1000
+    ) {
+      return { id: value.id, role, exp: value.exp, sessionVersion };
     }
     return null;
   } catch {
@@ -92,13 +126,15 @@ export function getSessionFromRequest(req: Request): SessionUser | null {
 
 export function setSessionCookie(
   res: Response,
-  user: { id: string; role: string },
+  user: { id: string; role: string; sessionVersion?: number },
 ) {
   const role = normalizeRole(user.role);
+  if (!role) throw new Error("Cannot create a session for an unsupported role");
   const payload: SessionUser = {
     id: user.id,
     role,
     exp: Math.floor(Date.now() / 1000) + MAX_AGE_SECONDS,
+    sessionVersion: user.sessionVersion ?? 0,
   };
   const encoded = encode(payload);
   const token = `${encoded}.${sign(encoded)}`;
@@ -117,6 +153,7 @@ export function clearSessionCookie(res: Response) {
   res.cookie(COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     maxAge: 0,
     path: "/",
   });

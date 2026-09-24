@@ -61,8 +61,8 @@
 }
 
 .shell__nav-item--active {
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
+  background: rgba(11, 107, 99, 0.28);
+  color: #b9ddd5;
 }
 
 .shell__content {
@@ -471,6 +471,98 @@
 }
 
 .upload-zone__change:hover { background: var(--c-primary-light); }
+
+/* Shared responsive layout and focus behavior for the role workspaces. */
+.shell__nav-item:focus-visible,
+.shell__logout:focus-visible,
+.filter-pill:focus-visible,
+.eval-btn:focus-visible {
+  outline: 3px solid var(--c-primary-border);
+  outline-offset: 2px;
+}
+
+.shell__content,
+.page,
+.page__body {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .shell {
+    flex-direction: column;
+  }
+
+  .shell__sidebar {
+    width: 100%;
+    max-height: 174px;
+    flex-shrink: 0;
+  }
+
+  .shell__brand {
+    padding: 10px 16px 8px;
+  }
+
+  .shell__nav {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 10px;
+  }
+
+  .shell__nav-item {
+    flex: 0 0 auto;
+    min-height: 40px;
+  }
+
+  .shell__user {
+    padding: 8px 14px;
+  }
+
+  .shell__content {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .page__header {
+    padding: 22px 20px 16px;
+  }
+
+  .page__body {
+    padding: 18px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .shell__sidebar {
+    max-height: 160px;
+  }
+
+  .shell__nav-item {
+    gap: 7px;
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .page__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 18px 16px 14px;
+  }
+
+  .page__body {
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .page__title {
+    font-size: 18px;
+  }
+
+  .empty-state {
+    padding: 40px 20px;
+  }
+}
 
 /* ---- Filter bar ---- */
 .filter-bar {

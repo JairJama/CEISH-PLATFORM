@@ -218,6 +218,22 @@ export class AdminService {
       );
     }
 
+    const [teacher, student] = await Promise.all([
+      this.prisma.user.findFirst({
+        where: { id: teacherId, role: { name: { in: CEISH_INTERNAL_ROLES } } },
+        select: { id: true },
+      }),
+      this.prisma.user.findFirst({
+        where: { id: studentId, role: { name: "student" } },
+        select: { id: true },
+      }),
+    ]);
+    if (!teacher || !student) {
+      throw new BadRequestException(
+        "La asignación requiere un miembro CEISH y un investigador válidos",
+      );
+    }
+
     const assignment = await this.prisma.assignment.upsert({
       where: { teacherId_studentId: { teacherId, studentId } },
       create: { teacherId, studentId },

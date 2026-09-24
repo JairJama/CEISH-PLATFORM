@@ -33,36 +33,35 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       border: 'none',
       cursor: disabled || isLoading ? 'not-allowed' : 'pointer',
       transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-      borderRadius: '999px',
+      borderRadius: '0.5rem',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: '0.5rem',
       width: fullWidth ? '100%' : 'auto',
       opacity: disabled || isLoading ? 0.65 : 1,
-      letterSpacing: '0.9px',
+      letterSpacing: 'normal',
       position: 'relative',
-      outline: 'none',
       transform: 'none',
-      minWidth: fullWidth ? 'auto' : '200px',
-      padding: '1rem 2.4rem',
+      minWidth: '0',
+      padding: '0.75rem 1rem',
     };
 
     const sizeStyles: React.CSSProperties = {
       sm: {
-        padding: '0.9rem 1.5rem',
+        padding: '0.65rem 1rem',
         fontSize: typography.fontSize.sm,
-        minHeight: '44px',
+        minHeight: '40px',
       },
       md: {
-        padding: '1rem 2rem',
+        padding: '0.8rem 1.2rem',
         fontSize: typography.fontSize.base,
-        minHeight: '52px',
+        minHeight: '44px',
       },
       lg: {
-        padding: '1.1rem 2.6rem',
+        padding: '0.9rem 1.4rem',
         fontSize: typography.fontSize.lg,
-        minHeight: '56px',
+        minHeight: '48px',
       },
     }[size];
 

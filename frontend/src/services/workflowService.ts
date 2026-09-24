@@ -1,4 +1,4 @@
-import { apiGet } from './http';
+import { apiGet, apiRequest } from './http';
 import { storageService } from './storage';
 import type { Annex12ChecklistItem } from '../shared/annex12';
 
@@ -134,25 +134,19 @@ export interface AdminResearchItem {
 }
 
 async function apiPatch<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(path, {
+  return apiRequest<T>(path, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error((data as { error?: string }).error ?? 'No se pudo completar la operación');
-  return data as T;
 }
 
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(path, {
+  return apiRequest<T>(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error((data as { error?: string }).error ?? 'No se pudo completar la operación');
-  return data as T;
 }
 
 export const workflowService = {

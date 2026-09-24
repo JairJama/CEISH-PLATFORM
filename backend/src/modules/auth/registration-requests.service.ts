@@ -1,16 +1,36 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { ConflictException, Injectable } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma/prisma.service";
+
+type RegistrationRequestRecord = {
+  id: string;
+  name: string;
+  email: string;
+  researcherType: string;
+  affiliation: string;
+  status: string;
+  createdAt: Date;
+  reviewedAt: Date | null;
+};
+
+function mapRegistrationRequest(request: RegistrationRequestRecord) {
+  return {
+    id: request.id,
+    name: request.name,
+    email: request.email,
+    researcher_type: request.researcherType,
+    affiliation: request.affiliation,
+    status: request.status,
+    created_at: request.createdAt,
+    reviewed_at: request.reviewedAt,
+  };
+}
 
 @Injectable()
 export class RegistrationRequestsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async listRequests() {
-    return this.prisma.registrationRequest.findMany({
+    const requests = await this.prisma.registrationRequest.findMany({
       select: {
         id: true,
         name: true,
@@ -23,6 +43,7 @@ export class RegistrationRequestsService {
       },
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     });
+    return requests.map(mapRegistrationRequest);
   }
 
   async reviewRequest(
@@ -30,74 +51,90 @@ export class RegistrationRequestsService {
     decision: "approved" | "rejected",
     adminId: string,
   ) {
-    return this.prisma.$transaction(async (tx) => {
-      const request = await tx.registrationRequest.findUnique({
-        where: { id },
-      });
+    try {
+      return await this.prisma.$transaction(
+        async (tx) => {
+          const request = await tx.registrationRequest.findUnique({
+            where: { id },
+          });
 
-      if (!request || request.status !== "pending") {
-        throw new ConflictException(
-          "La solicitud ya fue procesada o no existe",
-        );
-      }
+          if (!request || request.status !== "pending") {
+            throw new ConflictException(
+              "La solicitud ya fue procesada o no existe",
+            );
+          }
 
-      if (decision === "approved") {
-        // Obtenemos el rol 'student'
-        let studentRole = await tx.role.findUnique({
-          where: { name: "student" },
-        });
-        if (!studentRole) {
-          studentRole = await tx.role.create({ data: { name: "student" } });
-        }
+          if (decision === "approved") {
+            // Obtenemos el rol 'student'
+            let studentRole = await tx.role.findUnique({
+              where: { name: "student" },
+            });
+            if (!studentRole) {
+              studentRole = await tx.role.create({ data: { name: "student" } });
+            }
 
-        // Crear o actualizar usuario
-        let user = await tx.user.findUnique({
-          where: { email: request.email },
-        });
-        if (!user) {
-          user = await tx.user.create({
+            // A request can never grant access to an already-existing account.
+            const existingUser = await tx.user.findUnique({
+              where: { email: request.email },
+            });
+            if (existingUser) {
+              throw new ConflictException(
+                "Ya existe una cuenta con el correo de esta solicitud",
+              );
+            }
+
+            const user = await tx.user.create({
+              data: {
+                name: request.name,
+                email: request.email,
+                password: request.passwordHash,
+                roleId: studentRole.id,
+              },
+            });
+
+            await tx.researcherProfile.create({
+              data: {
+                userId: user.id,
+                researcherType: request.researcherType,
+                affiliation: request.affiliation,
+              },
+            });
+          }
+
+          const reviewed = await tx.registrationRequest.update({
+            where: { id },
             data: {
-              name: request.name,
-              email: request.email,
-              password: request.passwordHash,
-              roleId: studentRole.id,
+              status: decision,
+              reviewedAt: new Date(),
+              reviewedBy: adminId,
+            },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              researcherType: true,
+              affiliation: true,
+              status: true,
+              createdAt: true,
+              reviewedAt: true,
             },
           });
-        }
-
-        // Crear o actualizar perfil de investigador
-        await tx.researcherProfile.upsert({
-          where: { userId: user.id },
-          create: {
-            userId: user.id,
-            researcherType: request.researcherType,
-            affiliation: request.affiliation,
-          },
-          update: {
-            researcherType: request.researcherType,
-            affiliation: request.affiliation,
-          },
-        });
+          return mapRegistrationRequest(reviewed);
+        },
+        { isolationLevel: "Serializable" },
+      );
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error.code === "P2002" || error.code === "P2034")
+      ) {
+        throw new ConflictException(
+          "La solicitud fue procesada por otra operación o ya existe una cuenta",
+        );
       }
-
-      return tx.registrationRequest.update({
-        where: { id },
-        data: {
-          status: decision,
-          reviewedAt: new Date(),
-          reviewedBy: adminId,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          researcherType: true,
-          affiliation: true,
-          status: true,
-          createdAt: true,
-          reviewedAt: true,
-        },
-      });
-    });
+      throw error;
+    }
   }
 }

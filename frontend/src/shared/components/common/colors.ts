@@ -6,11 +6,11 @@
 export const colors = {
   // Primarios
   primary: {
-    50: '#EFF6FF',
-    100: '#DBEAFE',
-    500: '#2563EB',
-    600: '#1D4ED8',
-    700: '#1E40AF',
+    50: '#E9F5F2',
+    100: '#D2EBE5',
+    500: '#0B6B63',
+    600: '#07564F',
+    700: '#064640',
   },
   // Secundarios
   success: {
@@ -79,13 +79,13 @@ export const typography = {
 };
 
 export const spacing = {
-  xs: '2rem',
-  sm: '0.5rem',
-  md: '1rem',
-  lg: '1.5rem',
-  xl: '2rem',
-  '2xl': '2.5rem',
-  '3xl': '3rem',
+    xs: '0.25rem',
+    sm: '0.5rem',
+    md: '1rem',
+    lg: '1.5rem',
+    xl: '2rem',
+    '2xl': '2.5rem',
+    '3xl': '3rem',
 };
 
 export const borderRadius = {

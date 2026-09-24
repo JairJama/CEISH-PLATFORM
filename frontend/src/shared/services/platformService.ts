@@ -15,23 +15,20 @@ import type {
   Review, ReviewStage, Assignment,
 } from '../types/platform.types';
 import type { Criterion, CriterionStatus } from '../../features/evaluation/types/evaluation.types';
+import { apiRequest } from '../../services/http';
 
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
 
 async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(path);
-  if (!res.ok) throw new Error(`GET ${path} → ${res.status}`);
-  return res.json() as Promise<T>;
+  return apiRequest<T>(path);
 }
 
 async function apiSend<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(path, {
+  return apiRequest<T>(path, {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(`${method} ${path} → ${res.status}`);
-  return res.json() as Promise<T>;
 }
 
 // ─── DTOs (forma cruda que devuelve la API) ──────────────────────────────────

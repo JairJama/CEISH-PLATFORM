@@ -56,6 +56,34 @@ services:
       exit 0;
       "
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ceish_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      APP_PORT: 3000
+      APP_HOST: 0.0.0.0
+      DATABASE_URL: postgresql://${DATABASE_USER:-ceish_user}:${DATABASE_PASSWORD:-ceish_pass}@postgres:5432/${DATABASE_NAME:-ceish_db}?schema=public
+      SESSION_SECRET: ${SESSION_SECRET:-ceish-development-secret-change-before-production}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-documents}
+      MINIO_USE_SSL: "false"
+      UPLOAD_MAX_MB: ${UPLOAD_MAX_MB:-15}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
 volumes:
   postgres_data:
     name: ceish_postgres_data
