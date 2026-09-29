@@ -94,6 +94,8 @@ Las contraseñas se guardan con `scrypt`. La sesión se transporta en una cookie
 
    Abre `http://localhost:5173`. La configuración de ejemplo activa el proxy hacia NestJS. Si se levanta toda la infraestructura con `docker compose up -d`, el servicio `backend` también se inicia dentro de Docker.
 
+   Para ejecutar todo el stack con el frontend compilado y servido por Nginx, usa `docker compose up -d --build`. El contenedor `frontend` sirve la aplicación en `http://localhost:5173` y reenvía `/api/*` al servicio `backend`; en ese modo no necesitas ejecutar Vite aparte.
+
 Docker ejecuta `database/schema.sql` y `database/seed.sql` únicamente al crear un volumen PostgreSQL vacío. Para una base existente, aplica las migraciones pendientes con `node scripts/migrate.mjs` desde la raíz.
 
 ## Configuración
@@ -119,7 +121,7 @@ cd frontend; npm run lint    # ESLint frontend
 cd backend; npm run build    # Build NestJS
 cd backend; npm run lint     # ESLint NestJS
 cd backend; npm test         # Pruebas de autenticación
-docker compose up -d        # PostgreSQL, MinIO y API NestJS
+docker compose up -d        # PostgreSQL, MinIO, API NestJS y frontend Nginx
 docker compose down         # Detiene servicios, conserva volúmenes
 ```
 

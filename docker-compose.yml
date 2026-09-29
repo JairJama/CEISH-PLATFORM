@@ -84,6 +84,20 @@ services:
       minio:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_USE_NEST_BACKEND: "true"
+    container_name: ceish_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      backend:
+        condition: service_started
+
 volumes:
   postgres_data:
     name: ceish_postgres_data

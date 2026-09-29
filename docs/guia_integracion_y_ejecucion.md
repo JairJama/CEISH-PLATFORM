@@ -22,7 +22,7 @@ NestJS normaliza errores como JSON. El cliente HTTP compartido prioriza el mensa
 
 ## Infraestructura y entorno
 
-Compose define PostgreSQL (puerto host 5433), MinIO (9000/9001), creación del bucket y NestJS (3000). Para desarrollo interactivo el frontend Vite se ejecuta local en el puerto 5173; también puede usarse `docker compose up -d` para levantar la API junto con la infraestructura.
+Compose define PostgreSQL (puerto host 5433), MinIO (9000/9001), creación del bucket, NestJS (3000) y un frontend Nginx (5173). Para desarrollo interactivo el frontend Vite puede ejecutarse localmente en el puerto 5173; para probar el stack completo compilado usa `docker compose up -d --build`, que sirve `frontend/dist` y reenvía `/api/*` a NestJS.
 
 La app lee el `.env` de la raíz. Si NestJS corre directamente desde `backend/`, usa su `.env.example` o carga `../.env`; su URL de PostgreSQL debe apuntar a `localhost:5433`. Dentro de Compose, el hostname es `postgres` y el puerto `5432`. MinIO usa `localhost` desde el host y `minio` desde Compose. No compartas ni subas `.env`.
 
