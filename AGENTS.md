@@ -11,9 +11,11 @@
 ## Arquitectura actual
 
 - El frontend usa React 19, TypeScript, Vite, React Router y Zustand.
-- La API temporal vive en `src/server/apiPlugin.ts`; las consultas PostgreSQL están en `src/server/queries/`.
+- El frontend React/Vite vive en `frontend/`; NestJS vive en `backend/`.
+- La API temporal de Vite vive en `frontend/src/server/apiPlugin.ts`; las consultas transitorias están en `frontend/src/server/queries/`.
 - PostgreSQL conserva metadatos y MinIO almacena documentos. El navegador nunca debe conectarse directamente a esos servicios.
-- La migración futura a NestJS debe mantener, inicialmente, los contratos `/api/*` consumidos por `src/services/`.
+- NestJS es la API de referencia y debe mantener los contratos `/api/*` consumidos por `frontend/src/services/`.
+- Para desarrollo, `frontend/vite.config.ts` usa el proxy hacia NestJS cuando `VITE_USE_NEST_BACKEND=true`; el plugin de Vite es solo una vía transitoria y no debe recibir capacidades nuevas.
 - Las migraciones aplicadas son inmutables. Los cambios de esquema se agregan en un archivo nuevo y se reflejan también en `database/schema.sql` para instalaciones limpias.
 
 ## Flujo CEISH y anexos
@@ -30,5 +32,5 @@
 - Aplicar autorización y reglas de negocio en el servidor, aunque la interfaz también oculte acciones.
 - Validar entradas en el cliente y nuevamente en el servidor.
 - Ejecutar `npm run lint` y `npm run build` antes de entregar cambios de código.
+- En cambios que afecten la API, ejecutar también desde `backend/` `npx prisma generate`, `npm run build` y `npm test`; validar el flujo integrado con PostgreSQL y MinIO cuando Docker esté disponible.
 - Toda transición del flujo debe probar el caso exitoso, acceso no autorizado, estado cerrado y repetición/concurrencia cuando corresponda.
-

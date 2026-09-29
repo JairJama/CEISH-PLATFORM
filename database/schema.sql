@@ -23,6 +23,7 @@ CREATE TABLE users (
   name       VARCHAR(120) NOT NULL,
   email      VARCHAR(255) NOT NULL UNIQUE,
   password   VARCHAR(255) NOT NULL,           -- hash scrypt: scrypt$salt$hash
+  auth_session_version INTEGER NOT NULL DEFAULT 0,
   role_id    UUID NOT NULL REFERENCES roles(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

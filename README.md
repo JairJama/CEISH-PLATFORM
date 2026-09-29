@@ -1,257 +1,150 @@
 # CEISH Platform
 
-Plataforma institucional para la recepción, estratificación y evaluación de investigaciones del CEISH. Soporta tres roles de usuario — **investigador**, **evaluador** y **administrador** — cada uno con su propia interfaz.
+Plataforma institucional para recibir, estratificar y evaluar investigaciones del CEISH. La interfaz ofrece flujos para investigadores, miembros evaluadores y administradores.
 
-> Estado actual: frontend en React conectado a PostgreSQL y a MinIO (almacenamiento
-> de documentos), todo orquestado por el dev server de Vite y levantado con Docker.
+## Arquitectura
 
-> El flujo institucional de anexos se documenta en [`contexto/flujo-anexos-evaluacion.md`](contexto/flujo-anexos-evaluacion.md).
+El monorepo mantiene la aplicación React/Vite y la API NestJS en paquetes separados. El navegador habla con la API mediante `/api/*`; solo el backend accede a PostgreSQL y MinIO.
 
----
-
-## Características
-
-### Estudiante
-- Subir un documento PDF con comentario descriptivo (drag-and-drop)
-- Ver el estado de la entrega en tiempo real: pendiente / en revisión / revisado
-- Consultar calificación y retroalimentación anónima del evaluador al finalizar la revisión
-- Editar o eliminar la entrega mientras no haya sido evaluada
-
-### Evaluador (Profesor)
-- Ver lista de estudiantes asignados con filtros por estado
-- Estratificar investigaciones y emitir los anexos 11, 23 y 27 según corresponda
-- Completar el checklist oficial del Anexo 12 y conservar cada emisión en el historial
-- Solicitar correcciones con plazo de 30 días, aprobar mediante los anexos 12 y 11 o cerrar mediante el Anexo 13
-- Abrir un flujo de revisión de 4 etapas: Estructura, Metodología, Resultados y Formato
-- Evaluar cada criterio (aprobar / rechazar) con observaciones y referencia de página en el PDF
-- Navegar entre etapas y finalizar con calificación numérica y comentario final
-
-### Administrador
-- Ver todos los evaluadores y sus estudiantes asignados con estado de entrega
-- Crear y eliminar asignaciones evaluador–estudiante desde un panel de dos columnas
-- Búsqueda por nombre o correo en ambas columnas del panel de asignaciones
-- Acceder directamente a cualquier revisión en curso
-
----
-
-## Stack
-
-| Capa | Tecnología |
-|------|-----------|
-| UI | React 19 + TypeScript |
-| Bundler | Vite 6 |
-| Routing | React Router v7 |
-| Estado global | Zustand v5 |
-| Renderizado PDF | react-pdf / PDF.js |
-| Estilos | CSS global con custom properties (sin Tailwind, sin CSS Modules) |
-| Base de datos | PostgreSQL 16 en Docker (volumen persistente) |
-| Object storage | MinIO en Docker (compatible S3, volumen persistente) |
-| Acceso a datos | Cliente `pg` + cliente MinIO + rutas API en el dev server de Vite |
-
----
-
-## Arquitectura de datos
-
-El navegador no puede conectarse directamente a PostgreSQL ni a MinIO (no permite
-sockets TCP crudos). Por eso el acceso a datos y archivos pasa por una capa mínima
-dentro del **propio dev server de Vite** — sin un proyecto backend separado
-(sin NestJS/Express/API aparte):
-
-```
-React (navegador)
-   src/services/*.ts        ── fetch ──►  rutas /api/* (plugin de Vite)
-                                               │
-                          ┌────────────────────┼────────────────────┐
-                          ▼                     ▼                    
-                  src/lib/database.ts    src/lib/minio.ts            
-                   (pool pg único)       (cliente MinIO)             
-                          │                     │                    
-                          ▼                     ▼                    
-                   PostgreSQL            MinIO (bucket "documents")  
-                  (metadatos)            (archivos PDF)              
+```mermaid
+flowchart LR
+  Browser[React 19 + Vite\nfrontend/src] -->|HTTP /api/* + cookie| API[NestJS\nbackend/src/modules]
+  API -->|Prisma| DB[(PostgreSQL 16)]
+  API -->|MinIO SDK| Store[(MinIO\narchivos y anexos)]
+  Migrations[database/schema.sql\n+ migraciones SQL] --> DB
 ```
 
-- Los **componentes** llaman a `src/services/*` y nunca ejecutan SQL ni suben a MinIO.
-- El **SQL** vive en `src/server/queries/` (solo lado servidor).
-- La **conexión** a la BD está centralizada en `src/lib/database.ts` (un solo pool).
-- Los **PDF no se guardan en PostgreSQL**: el archivo va a MinIO y la BD solo
-  almacena la referencia del objeto (`submissions.document_path`).
+El frontend conserva los contratos consumidos desde `frontend/src/services/`. En desarrollo, Vite reenvía `/api` a NestJS cuando `VITE_USE_NEST_BACKEND=true`. El antiguo plugin `frontend/src/server/apiPlugin.ts` sigue disponible como transición local, pero NestJS es la implementación de referencia y la configuración de ejemplo usa NestJS.
 
-### Flujo de subida de un documento
+### Estructura y responsabilidades
 
-```
-Estudiante selecciona PDF
-        ↓  multipart/form-data
-POST /api/upload  (valida tipo PDF y tamaño)
-        ↓
-Middleware sube el archivo a MinIO  → devuelve la clave del objeto
-        ↓
-Se crea la entrega en PostgreSQL con document_path
-        ↓
-Ver documento (estudiante) → GET /api/documents/:id → URL temporal firmada (5 min)
-        ↓
-Revisar (evaluador) → GET /api/documents/:id/raw → el PDF se transmite por el
-        mismo origen y se carga automáticamente en el visor de la revisión
+```text
+frontend/                    Aplicación React/Vite
+├── src/                     Rutas, vistas, servicios y API Vite transitoria
+├── public/                  Recursos estáticos
+├── package.json             Scripts y dependencias del frontend
+└── vite.config.ts           Proxy local hacia la API NestJS
+backend/                     API NestJS
+├── prisma/schema.prisma     Modelos de PostgreSQL
+└── src/                     Guards, utilidades y módulos de dominio
+    ├── common/              Auth, validación, Prisma y MinIO
+    └── modules/             Auth, users, submissions, reviews y CEISH
+database/                    Esquema inicial, seed y migraciones SQL incrementales
+docs/                        Arquitectura, ejecución y matrices de revisión
 ```
 
----
+Las migraciones aplicadas no se editan: los cambios de esquema se agregan con un nuevo archivo numerado en `database/migrations/` y se reflejan en `database/schema.sql`. NestJS usa Prisma para consultar el esquema compartido. Los contratos actuales de `/api/*` deben mantenerse durante la transición de servicios.
 
-## Estructura del proyecto
+### Límites entre módulos
 
-```
-database/
-├── schema.sql                    # Definición de tablas, índices y constraints
-└── seed.sql                      # Datos de prueba
-docker-compose.yml                # PostgreSQL + MinIO + init del bucket + volúmenes
-src/
-├── lib/
-│   ├── database.ts               # Pool pg único (lado servidor)
-│   └── minio.ts                  # Cliente MinIO: bucket, subida y URLs firmadas
-├── server/                       # Solo se ejecuta en el dev server de Vite (Node)
-│   ├── apiPlugin.ts              # Plugin de Vite que enruta /api/* (incl. /upload y /documents)
-│   └── queries/                  # SQL por dominio (users, submissions, ...)
-├── services/                     # Lo que llaman los componentes (fetch, sin SQL)
-│   ├── http.ts
-│   ├── storage.ts                # Subida de PDF + URL de visualización (MinIO)
-│   ├── submissions.ts            # Orquesta documento (storage) + entrega (BD)
-│   ├── userService.ts
-│   ├── submissionService.ts
-│   ├── assignmentService.ts
-│   └── reviewService.ts
-├── app/
-│   ├── router/index.tsx          # Rutas y redirección por rol (RootRedirect)
-│   └── providers/AppProviders.tsx
-├── features/
-│   ├── auth/                     # Login con selección de usuario
-│   ├── evaluation/               # Módulo de evaluación PDF standalone (legacy)
-│   ├── student/                  # Vista de entrega de documento
-│   ├── evaluator/                # Dashboard + flujo de revisión multi-etapa
-│   └── admin/                    # Panel de administración y asignaciones
-├── shared/
-│   ├── types/platform.types.ts   # User, Review, Assignment, Submission, etc.
-│   ├── services/platformService.ts  # Datos mock en memoria (UI aún por migrar a services/)
-│   ├── components/AppShell.tsx   # Sidebar 220px + Outlet
-│   └── styles/platform.css       # Badges, modales, filtros, upload-zone
-└── store/
-    ├── authStore.ts              # Usuario activo (Zustand)
-    ├── reviewStore.ts            # Revisión activa con mutaciones por etapa
-    └── evaluationStore.ts        # Sesión de evaluación legacy
-```
+| Módulo | Responsabilidad |
+| --- | --- |
+| `auth` | Login, registro, sesión y revisión de solicitudes |
+| `users` | Perfiles y listados limitados por rol y asignación |
+| `submissions` | Entregas, documentos y flujos de revisión |
+| `stratification` | Asignación CEISH, conflicto y Anexo 27 |
+| `qualification` | Checklist Anexo 12, correcciones y ciclos de evaluación |
+| `reviews` | Revisión académica por etapas |
+| `annexes` | Emisión y descarga de documentos institucionales |
+| `admin` | Supervisión y asignaciones administrativas |
 
----
+Las contraseñas se guardan con `scrypt`. La sesión se transporta en una cookie firmada `HttpOnly`, `SameSite=Lax` y `Secure` en producción; cada solicitud protegida vuelve a consultar el usuario y rol vigentes. Los permisos se aplican en NestJS, además de cualquier restricción visual del frontend.
 
-## Rutas
+## Requisitos
 
-| Ruta | Rol | Descripción |
-|------|-----|-------------|
-| `/login` | todos | Selección de usuario de prueba |
-| `/` | todos | Redirección automática por rol |
-| `/estudiante` | student | Gestión de entrega de documento |
-| `/evaluador` | evaluator | Lista de estudiantes asignados |
-| `/evaluador/revision/:submissionId` | evaluator | Revisión multi-etapa (pantalla completa) |
-| `/admin` | admin | Vista general de evaluadores y estudiantes |
-| `/admin/asignaciones` | admin | Crear / eliminar asignaciones |
-| `/evaluacion` | evaluator | Módulo de evaluación PDF legacy |
+- Node.js 20.19+ o 22.12+
+- npm
+- Docker Compose para PostgreSQL y MinIO
 
----
+## Ejecutar localmente
 
-## Correr localmente
+1. Copia `.env.example` a `.env` y configura una clave secreta única para `SESSION_SECRET`. Vite lee el archivo de entorno desde la raíz.
+2. Instala las dependencias en cada paquete. Ejecuta cada grupo desde la raíz en una terminal separada:
 
-**Requisitos:**
-- [Docker](https://www.docker.com/) y Docker Compose
-- Node.js 18+
+   ```bash
+   cd frontend
+   npm ci
+   ```
 
-### 1. Clonar e instalar dependencias
+   ```bash
+   cd backend
+   npm ci
+   npx prisma generate
+   ```
+
+3. Inicia PostgreSQL, MinIO y NestJS:
+
+   ```bash
+   docker compose up -d postgres minio
+   ```
+
+   ```bash
+   cd backend
+   npm run start:dev
+   ```
+
+   El backend escucha en `http://localhost:3000`; Swagger está en `http://localhost:3000/api/docs`.
+
+4. En otra terminal, desde la raíz del repositorio, inicia React/Vite:
+
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+
+   Abre `http://localhost:5173`. La configuración de ejemplo activa el proxy hacia NestJS. Si se levanta toda la infraestructura con `docker compose up -d`, el servicio `backend` también se inicia dentro de Docker.
+
+Docker ejecuta `database/schema.sql` y `database/seed.sql` únicamente al crear un volumen PostgreSQL vacío. Para una base existente, aplica las migraciones pendientes con `node scripts/migrate.mjs` desde la raíz.
+
+## Configuración
+
+Las variables principales están en `.env.example`; `backend/.env.example` documenta valores para ejecutar NestJS fuera de Docker. Dentro de Compose, el backend usa los nombres de servicio `postgres` y `minio`. En producción se deben establecer `SESSION_SECRET` (aleatorio, 32 caracteres o más), `DATABASE_PASSWORD`, claves de MinIO y `CORS_ORIGIN` explícitos; no se deben reutilizar las credenciales de demostración.
+
+| Variable | Uso |
+| --- | --- |
+| `VITE_USE_NEST_BACKEND` | Activa el proxy `/api` desde Vite a NestJS |
+| `BACKEND_URL` | Destino del proxy local, por defecto `http://localhost:3000` |
+| `DATABASE_URL` | Conexión Prisma a PostgreSQL |
+| `SESSION_SECRET` | Firma de cookies de sesión |
+| `CORS_ORIGIN` | Origen del frontend autorizado por NestJS |
+| `MINIO_ENDPOINT`, `MINIO_PORT` | Conexión del backend al almacenamiento |
+| `UPLOAD_MAX_MB` | Límite de tamaño de carga |
+
+## Comandos útiles
 
 ```bash
-git clone https://github.com/tu-usuario/ceish-platform.git
-cd ceish-platform
-npm install
+cd frontend; npm run dev     # Frontend Vite
+cd frontend; npm run build   # TypeScript y build frontend
+cd frontend; npm run lint    # ESLint frontend
+cd backend; npm run build    # Build NestJS
+cd backend; npm run lint     # ESLint NestJS
+cd backend; npm test         # Pruebas de autenticación
+docker compose up -d        # PostgreSQL, MinIO y API NestJS
+docker compose down         # Detiene servicios, conserva volúmenes
 ```
 
-### 2. Configurar variables de entorno
+El comando `docker compose down -v` elimina los volúmenes de datos y reinicia el seed; úsalo solo cuando quieras descartar esos datos locales.
 
-```bash
-cp .env.example .env
-```
+## Flujos principales
 
-El `.env` ya trae valores listos para el demo. Por defecto el contenedor de
-PostgreSQL se publica en el host en el puerto **5433** (para no chocar con una
-instalación local que suele ocupar el 5432). MinIO usa **9000** (API) y **9001**
-(consola web). Ajusta los puertos en `.env` si lo necesitas.
+- **Investigador:** solicita registro; tras aprobación puede gestionar perfil e investigaciones, enviar documentos y responder solicitudes de corrección.
+- **Evaluador / miembro CEISH:** accede a las investigaciones asignadas, registra estratificación, emite anexos y revisa documentos.
+- **Administrador:** revisa solicitudes de registro, gestiona usuarios y asignaciones, y supervisa el flujo institucional.
 
-### 3. Levantar la infraestructura (Docker)
+Las pantallas y rutas están centralizadas en `frontend/src/app/router/index.tsx`. Los componentes consultan servicios de `frontend/src/services/`; no ejecutan consultas SQL ni acceden a MinIO. Los archivos permanecen en MinIO y PostgreSQL conserva sus metadatos y rutas.
 
-```bash
-docker compose up -d
-```
+## Convenciones de trabajo
 
-Esto levanta tres cosas:
-- **PostgreSQL** — la primera vez ejecuta `database/schema.sql` y `database/seed.sql`.
-- **MinIO** — object storage para los PDF (consola en http://localhost:9001,
-  usuario/clave `minioadmin` / `minioadmin`).
-- **minio-init** — contenedor efímero que crea el bucket `documents` y termina.
+- Trabaja en una rama enfocada (`feature/`, `fix/` o `docs/`) y no desarrolles directamente en `master` o `develop`.
+- Conserva el contrato de respuesta y las rutas existentes al mover lógica al backend.
+- Valida entradas y permisos en el servidor. El rol y la relación del usuario con la investigación se comprueban antes de devolver datos.
+- Usa DTOs validados en NestJS y mantiene las respuestas de error legibles por los servicios del frontend.
+- Documenta cambios de API o esquema y agrega migraciones SQL nuevas; no edites migraciones ya aplicadas.
+- Ejecuta lint y build de ambos paquetes antes de solicitar revisión.
 
-Los volúmenes `ceish_postgres_data` y `ceish_minio_data` conservan los datos y
-archivos aunque ejecutes `docker compose down`.
+## Documentación
 
-### 4. Ejecutar el frontend
-
-```bash
-npm run dev
-# → http://localhost:5173
-```
-
-### Comandos
-
-```bash
-npm run dev            # Servidor de desarrollo con HMR + rutas API
-npm run build          # Type-check + build de producción
-npm run lint           # ESLint
-docker compose up -d   # Levantar PostgreSQL + MinIO
-docker compose down    # Detener servicios (conserva los volúmenes)
-docker compose down -v # Detener y borrar datos/archivos (reinicia el seed)
-```
-
-### Verificar que los datos llegan desde PostgreSQL
-
-Con la BD levantada y el dev server corriendo, estas rutas devuelven datos reales:
-
-```bash
-curl "http://localhost:5173/api/users?role=student"
-curl "http://localhost:5173/api/submissions"
-curl "http://localhost:5173/api/reviews/d0000000-0000-0000-0000-000000000001"
-```
-
-### Usuarios de prueba (seed)
-
-| Nombre | Rol | Email | Contraseña |
-|--------|-----|-------|-----------|
-| Admin Demo | admin | admin@ceish.edu | demo123 |
-| Profesor Demo | teacher | profesor@ceish.edu | demo123 |
-| Juan Pérez | student | juan@ceish.edu | demo123 |
-| María López | student | maria@ceish.edu | demo123 |
-| Carlos Ruiz | student | carlos@ceish.edu | demo123 |
-
-**Datos precargados:** el Profesor Demo tiene 3 estudiantes asignados; Juan tiene
-una entrega (`submitted`) con una revisión en curso (etapa 1 completa, etapa 2 en
-progreso) que incluye criterios evaluados y una anotación sobre el PDF.
-
----
-
-## Roadmap
-
-- [x] Base de datos PostgreSQL en Docker con schema y seed
-- [x] Capa de acceso a datos (pool `pg` + rutas API + servicios del frontend)
-- [x] UI conectada a PostgreSQL (sin datos mock)
-- [x] Almacenamiento de PDF en MinIO (subida, validación y URLs firmadas)
-- [x] Visualización del PDF del estudiante dentro de la revisión del evaluador
-- [x] Sesión autenticada mediante cookie HttpOnly firmada y contraseñas scrypt
-- [ ] Notificaciones de estado por correo
-- [ ] Panel de estadísticas para administrador
-
----
-
-## Licencia
-
-Uso institucional interno — CEISH.
+- [Guía de integración y ejecución](docs/guia_integracion_y_ejecucion.md)
+- [Guía del sistema visual](docs/sistema-visual.md)
+- [Matriz de autenticación y autorización](docs/matriz-seguridad-auth.md)
+- [Flujo institucional de anexos](contexto/flujo-anexos-evaluacion.md)
