@@ -224,3 +224,13 @@
 .upload-file-list strong { overflow: hidden; color: var(--c-text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .upload-file-list span { color: var(--c-text-muted); font-size: 10px; }
 .upload-file-list button { border: 0; color: var(--c-danger); background: transparent; font-size: 11px; font-weight: 700; cursor: pointer; }
+
+/* Dark dashboard card treatment */
+.student-submissions-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: start; gap: 14px; }
+.submission-card { max-width: none; min-height: 265px; padding: 18px; background: #12161b; border-color: #2a3038; border-radius: 9px; }
+.submission-card:hover { border-color: #404852; box-shadow: 0 18px 34px rgb(0 0 0 / .2); }
+.submission-card__code { color: #8c95a1; }
+.submission-card__comment, .submission-card__documents, .submission-card__classification, .submission-card__qualification { background: #171b20; border-color: #30363f; }
+.submission-card__comment { border-left-color: #ef3e3a; }
+.submission-card__annex { background: #112a20; }
+.upload-zone--multiple, .upload-file-list li { background: #12161b; border-color: #343b45; }

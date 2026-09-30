@@ -12,6 +12,14 @@
   overflow: hidden;
 }
 
+.request-list, .research-management-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); align-items: start; gap: 14px; }
+.request-card, .research-management-card { background: #12161b; border-color: #2a3038; border-radius: 9px; }
+.evaluator-block__header, .research-management-card__annexes li { background: #171b20; border-color: #30363f; }
+.assignment-grid { background: #12161b; border-color: #2a3038; }
+.selector-item { background: #171b20; border-color: #30363f; color: var(--c-text); }
+.selector-item:hover, .selector-item--selected { background: #281b1e; border-color: #754044; }
+.assignment-row { background: #171b20; border-color: #30363f; }
+
 .evaluator-block__header {
   display: flex;
   align-items: center;
