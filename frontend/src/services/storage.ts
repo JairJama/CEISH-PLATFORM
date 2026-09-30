@@ -12,7 +12,7 @@ export interface UploadResult {
 
 // Validaciones del lado del cliente (el servidor las revalida)
 export const ACCEPTED_TYPE = 'application/pdf';
-export const ACCEPTED_RESEARCH_EXTENSIONS = ['.doc', '.docx'] as const;
+export const ACCEPTED_RESEARCH_EXTENSIONS = ['.doc', '.docx', '.pdf'] as const;
 export const MAX_MB = 15;
 
 export function validatePdf(file: File): string | null {
@@ -25,7 +25,7 @@ export function validatePdf(file: File): string | null {
 export function validateResearchDocument(file: File): string | null {
   const lowerName = file.name.toLowerCase();
   if (!ACCEPTED_RESEARCH_EXTENSIONS.some((extension) => lowerName.endsWith(extension))) {
-    return 'Solo se permiten documentos Word (.doc o .docx).';
+    return 'Solo se permiten documentos Word (.doc o .docx) o PDF (.pdf).';
   }
   if (file.size > MAX_MB * 1024 * 1024) return `El archivo supera el límite de ${MAX_MB} MB.`;
   return null;

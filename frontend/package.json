@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "busboy": "^1.6.0",
+    "docx-preview": "^0.4.1",
+    "jszip": "^3.10.2",
     "minio": "^8.0.7",
     "pg": "^8.21.0",
     "react": "^19.2.6",

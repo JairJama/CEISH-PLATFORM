@@ -6,6 +6,7 @@ import {
   type StratificationTask,
 } from '../../services/workflowService';
 import { storageService } from '../../services/storage';
+import { DocumentModal } from '../../shared/components/DocumentModal';
 import './evaluator.css';
 
 const NO_RISK_INDICATORS = [
@@ -93,6 +94,7 @@ function Annex11Editor({ task, onSaved }: { task: StratificationTask; onSaved: (
 
 function AnnexDocumentActions({ task }: { task: StratificationTask }) {
   const [message, setMessage] = useState<string | null>(null);
+  const [viewingDoc, setViewingDoc] = useState<{ url: string; name: string } | null>(null);
   const documents = [
     { id: task.annex_23_id, label: 'Anexo 23' },
     { id: task.annex_27_status === 'completed' ? task.annex_27_id : null, label: 'Anexo 27' },
@@ -108,7 +110,7 @@ function AnnexDocumentActions({ task }: { task: StratificationTask }) {
         link.rel = 'noopener';
         link.click();
       } else {
-        window.open(document.url, '_blank', 'noopener');
+        setViewingDoc({ url: document.url, name: document.documentName });
       }
       setMessage(null);
     } catch (cause) {
@@ -135,6 +137,7 @@ function AnnexDocumentActions({ task }: { task: StratificationTask }) {
         ))}
       </ul>
       {message && <p className="stratification-card__message" role="alert">{message}</p>}
+      {viewingDoc && <DocumentModal url={viewingDoc.url} name={viewingDoc.name} onClose={() => setViewingDoc(null)} />}
     </section>
   );
 }
@@ -337,10 +340,12 @@ function Annex27Form({ task, onSaved }: { task: StratificationTask; onSaved: () 
 }
 
 function ResearchDocuments({ task }: { task: StratificationTask }) {
-  const openDocument = async (documentId: string) => {
+  const [viewingDoc, setViewingDoc] = useState<{ url: string; name: string } | null>(null);
+
+  const openDocument = async (documentId: string, name: string) => {
     try {
       const url = await storageService.getResearchDocumentUrl(documentId);
-      window.open(url, '_blank', 'noopener');
+      setViewingDoc({ url, name });
     } catch (cause) {
       window.alert((cause as Error).message);
     }
@@ -356,10 +361,11 @@ function ResearchDocuments({ task }: { task: StratificationTask }) {
         {task.documents.map((document) => (
           <li key={document.id}>
             <span>{document.document_name}</span>
-            <button className="eval-btn eval-btn--outline" type="button" onClick={() => openDocument(document.id)}>Abrir</button>
+            <button className="eval-btn eval-btn--outline" type="button" onClick={() => openDocument(document.id, document.document_name)}>Abrir</button>
           </li>
         ))}
       </ul>
+      {viewingDoc && <DocumentModal url={viewingDoc.url} name={viewingDoc.name} onClose={() => setViewingDoc(null)} />}
     </div>
   );
 }

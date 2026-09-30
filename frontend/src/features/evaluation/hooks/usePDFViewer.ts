@@ -58,11 +58,10 @@ export function usePDFViewer() {
     setState((s) => ({
       ...s,
       pdfFile: file,
-      currentPage: 1,
-      totalPages: 0,
-      isLoading: true,
     }));
   }, []);
+
+  const onLoadError = useCallback(() => setState((s) => ({ ...s, isLoading: false })), []);
 
   return {
     ...state,
@@ -75,5 +74,6 @@ export function usePDFViewer() {
     zoomOut,
     resetZoom,
     loadFile,
+    onLoadError,
   };
 }
