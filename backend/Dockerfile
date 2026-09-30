@@ -27,6 +27,7 @@ RUN apt-get update \
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/node_modules/@prisma/client ./node_modules/@prisma/client
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/annex-templates ./annex-templates
 
 EXPOSE 3000
 CMD ["node", "dist/main"]

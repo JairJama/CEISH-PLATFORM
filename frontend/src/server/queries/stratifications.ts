@@ -262,7 +262,6 @@ export async function saveStratificationDecision(
       submission_id: string;
       classification_status: string;
       conflict_cleared: boolean;
-      annex_27_id: string | null;
     }>(
       `SELECT sa.id, sa.submission_id, s.classification_status,
               EXISTS (
@@ -273,14 +272,9 @@ export async function saveStratificationDecision(
                    AND declaration.status = 'completed'
                    AND declaration.completed_by = sa.stratifier_id
                    AND declaration.data->>'hasConflict' = 'false'
-              ) AS conflict_cleared,
-              annex27.id AS annex_27_id
+              ) AS conflict_cleared
          FROM stratification_assignments sa
          JOIN submissions s ON s.id = sa.submission_id
-         LEFT JOIN research_annexes annex27
-           ON annex27.assignment_id = sa.id
-          AND annex27.annex_number = 27
-          AND annex27.status <> 'voided'
         WHERE sa.id = $1 AND sa.stratifier_id = $2
         FOR UPDATE OF sa, s`,
       [assignmentId, stratifierId],
@@ -288,15 +282,22 @@ export async function saveStratificationDecision(
     const assignment = assignmentResult.rows[0];
     if (!assignment) return 'not-found';
     if (assignment.classification_status === 'cancelled') return 'closed';
-    if (!assignment.conflict_cleared || !assignment.annex_27_id) return 'conflict-required';
+    if (!assignment.conflict_cleared) return 'conflict-required';
 
     await client.query(
-      `UPDATE research_annexes
-          SET status = 'completed', data = $2::jsonb,
-              completed_by = $3, completed_at = NOW(), updated_at = NOW()
-        WHERE id = $1`,
+      `INSERT INTO research_annexes
+         (submission_id, assignment_id, annex_number, status, data, created_by, completed_by, completed_at)
+       VALUES ($1, $2, 27, 'completed', $3::jsonb, $4, $4, NOW())
+       ON CONFLICT (assignment_id, annex_number)
+         WHERE annex_number = 27 AND status <> 'voided'
+       DO UPDATE SET status = 'completed',
+                     data = EXCLUDED.data,
+                     completed_by = EXCLUDED.completed_by,
+                     completed_at = EXCLUDED.completed_at,
+                     updated_at = NOW()`,
       [
-        assignment.annex_27_id,
+        assignment.submission_id,
+        assignment.id,
         JSON.stringify({ ...annex, finalRiskLevel: 'no-risk' }),
         stratifierId,
       ],
