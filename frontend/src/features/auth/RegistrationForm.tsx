@@ -85,8 +85,10 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit }) => {
 
         <fieldset className="registration-form__type" disabled={isLoading}>
           <legend>Tipo de investigador <span aria-hidden="true">*</span></legend>
-          <label><input type="radio" name="researcherType" value="internal" checked={researcherType === 'internal'} onChange={() => setResearcherType('internal')} /> Investigador interno</label>
-          <label><input type="radio" name="researcherType" value="external" checked={researcherType === 'external'} onChange={() => setResearcherType('external')} /> Investigador externo</label>
+          <div className="registration-form__choices">
+            <label className={researcherType === 'internal' ? 'is-selected' : ''}><input type="radio" name="researcherType" value="internal" checked={researcherType === 'internal'} onChange={() => setResearcherType('internal')} /><span><strong>Investigador interno</strong><small>Vinculado a Uleam</small></span></label>
+            <label className={researcherType === 'external' ? 'is-selected' : ''}><input type="radio" name="researcherType" value="external" checked={researcherType === 'external'} onChange={() => setResearcherType('external')} /><span><strong>Investigador externo</strong><small>Otra institución</small></span></label>
+          </div>
         </fieldset>
 
         {researcherType === 'external' && (

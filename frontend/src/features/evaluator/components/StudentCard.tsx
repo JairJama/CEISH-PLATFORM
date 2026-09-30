@@ -23,7 +23,7 @@ export function StudentCard({ student, submission }: Props) {
   };
 
   return (
-    <div className="student-card">
+    <div className="student-card evaluator-folder-card" role={submission ? 'button' : undefined} tabIndex={submission ? 0 : undefined} onClick={submission ? handleReview : undefined} onKeyDown={(event) => { if (submission && (event.key === 'Enter' || event.key === ' ')) handleReview(); }}>
       <div className="student-card__avatar">{student.name.charAt(0)}</div>
       <div className="student-card__info">
         <p className="student-card__name">{student.name}</p>

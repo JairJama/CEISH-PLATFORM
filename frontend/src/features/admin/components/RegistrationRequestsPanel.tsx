@@ -13,6 +13,8 @@ export function RegistrationRequestsPanel() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [type, setType] = useState<'all' | 'internal' | 'external'>('all');
 
   useEffect(() => {
     void workflowService.getRegistrationRequests()
@@ -35,6 +37,10 @@ export function RegistrationRequestsPanel() {
   };
 
   const pendingCount = requests.filter((request) => request.status === 'pending').length;
+  const filteredRequests = requests.filter((request) => {
+    const matchesSearch = `${request.name} ${request.email}`.toLowerCase().includes(search.toLowerCase());
+    return matchesSearch && (type === 'all' || request.researcher_type === type);
+  });
 
   return (
     <div className="page">
@@ -47,13 +53,18 @@ export function RegistrationRequestsPanel() {
 
       <div className="page__body">
         {error && <div className="workflow-alert workflow-alert--error" role="alert">{error}</div>}
+        <div className="request-toolbar">
+          <label><span className="sr-only">Buscar solicitudes</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre o correo..." /></label>
+          <select value={type} onChange={(event) => setType(event.target.value as typeof type)}><option value="all">Todos los tipos</option><option value="internal">Investigador interno</option><option value="external">Investigador externo</option></select>
+          <span>{filteredRequests.length} resultados</span>
+        </div>
         {loading ? (
           <div className="page__loading"><div className="pdf-spinner" /><span>Cargando...</span></div>
-        ) : requests.length === 0 ? (
+        ) : filteredRequests.length === 0 ? (
           <div className="empty-state"><p className="empty-state__title">No hay solicitudes registradas</p></div>
         ) : (
           <div className="request-list">
-            {requests.map((request) => (
+            {filteredRequests.map((request) => (
               <article key={request.id} className="request-card">
                 <div className="request-card__identity">
                   <span className="request-card__avatar">{request.name.charAt(0)}</span>

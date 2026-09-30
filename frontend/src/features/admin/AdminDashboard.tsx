@@ -1,103 +1,55 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { platformService } from '../../shared/services/platformService';
-import type { User, StudentSubmission, Assignment } from '../../shared/types/platform.types';
+import type { Assignment, StudentSubmission, User } from '../../shared/types/platform.types';
 import './admin.css';
 
-interface EvaluatorRow {
-  evaluator: User;
-  students: { student: User; submission: StudentSubmission | null }[];
+interface MemberRow { member: User; researchers: Array<{ student: User; submission: StudentSubmission | null }> }
+
+function stage(submission: StudentSubmission | null) {
+  if (!submission) return 'Sin investigación enviada';
+  if (submission.classificationStatus !== 'classified') return 'Estratificación';
+  if (submission.qualificationStatus === 'approved') return 'Aprobada';
+  return 'Evaluación ética';
 }
 
-const STATUS_CONFIG = {
-  none: { label: 'Sin entrega', cls: 'badge--neutral' },
-  pending: { label: 'Pendiente', cls: 'badge--warning' },
-  'under-review': { label: 'En revisión', cls: 'badge--info' },
-  reviewed: { label: 'Revisado', cls: 'badge--success' },
-} as const;
-
 export function AdminDashboard() {
-  const navigate = useNavigate();
-  const [rows, setRows] = useState<EvaluatorRow[]>([]);
+  const [rows, setRows] = useState<MemberRow[]>([]);
+  const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const getRows = async (): Promise<EvaluatorRow[]> => {
-    const [users, assignments, allSubs]: [User[], Assignment[], StudentSubmission[]] = await Promise.all([
-      platformService.getUsers(),
-      platformService.getAssignments(),
-      platformService.getAllSubmissions(),
-    ]);
-    const evaluators = users.filter((u) => u.role === 'evaluator');
-    const result: EvaluatorRow[] = evaluators.map((ev) => {
-      const studentIds = assignments.filter((a) => a.evaluatorId === ev.id).map((a) => a.studentId);
-      const students = users.filter((u) => studentIds.includes(u.id)).map((s) => ({
-        student: s,
-        submission: allSubs.find((sub) => sub.studentId === s.id) ?? null,
-      }));
-      return { evaluator: ev, students };
-    });
-    return result;
-  };
-
   useEffect(() => {
-    void getRows().then((result) => {
-      setRows(result);
-      setLoading(false);
-    });
+    void Promise.all([platformService.getUsers(), platformService.getAssignments(), platformService.getAllSubmissions()])
+      .then(([users, assignments, researches]: [User[], Assignment[], StudentSubmission[]]) => {
+        setSubmissions(researches);
+        setRows(users.filter((user) => user.role === 'evaluator').map((member) => {
+          const ids = assignments.filter((item) => item.evaluatorId === member.id).map((item) => item.studentId);
+          return { member, researchers: users.filter((user) => ids.includes(user.id)).map((student) => ({ student, submission: researches.find((item) => item.studentId === student.id) ?? null })) };
+        }));
+      }).finally(() => setLoading(false));
   }, []);
 
-  return (
-    <div className="page">
-      <div className="page__header">
-        <div>
-          <h1 className="page__title">Panel general</h1>
-          <p className="page__subtitle">Estado de evaluaciones por profesor</p>
-        </div>
-      </div>
+  const active = submissions.filter((item) => item.classificationStatus !== 'cancelled' && item.qualificationStatus !== 'approved');
+  const evaluating = active.filter((item) => item.classificationStatus === 'classified').length;
 
-      <div className="page__body">
-        {loading ? (
-          <div className="page__loading"><div className="pdf-spinner" /><span>Cargando...</span></div>
-        ) : (
-          <div className="admin-evaluators">
-            {rows.map((row) => (
-              <div key={row.evaluator.id} className="evaluator-block">
-                <div className="evaluator-block__header">
-                  <span className="evaluator-block__avatar">{row.evaluator.name.charAt(0)}</span>
-                  <div>
-                    <p className="evaluator-block__name">{row.evaluator.name}</p>
-                    <p className="evaluator-block__count">{row.students.length} estudiantes asignados</p>
-                  </div>
-                </div>
-                {row.students.length === 0 ? (
-                  <p className="evaluator-block__empty">Sin estudiantes asignados</p>
-                ) : (
-                  <div className="evaluator-block__students">
-                    {row.students.map(({ student, submission }) => {
-                      const statusKey = submission ? submission.status : 'none';
-                      const status = STATUS_CONFIG[statusKey];
-                      return (
-                        <div key={student.id} className="admin-student-row">
-                          <span className="admin-student-row__name">{student.name}</span>
-                          <span className={`badge ${status.cls}`}>{status.label}</span>
-                          {submission && (
-                            <button
-                              className="eval-btn eval-btn--sm eval-btn--outline"
-                              onClick={() => navigate(`/evaluador/revision/${submission.id}`)}
-                            >
-                              Abrir
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
+  return <div className="page">
+    <div className="page__header"><div><h1 className="page__title">Panel de control</h1><p className="page__subtitle">Actividad actual del comité y distribución de investigadores.</p></div></div>
+    <div className="page__body">
+      {loading ? <div className="page__loading"><div className="pdf-spinner" />Cargando panel...</div> : <>
+        <section className="admin-metrics" aria-label="Resumen de investigaciones">
+          <article><span>Investigaciones activas</span><strong>{active.length}</strong><small>En proceso institucional</small></article>
+          <article><span>En estratificación</span><strong>{active.length - evaluating}</strong><small>Pendientes de definir riesgo</small></article>
+          <article><span>En evaluación</span><strong>{evaluating}</strong><small>Checklist o dictamen activos</small></article>
+          <article><span>Miembros CEISH activos</span><strong>{rows.length}</strong><small>Con investigadores asignados</small></article>
+        </section>
+        <section className="admin-section"><div className="section-heading"><div><p>MIEMBROS ACTIVOS</p><h2>Distribución del comité</h2></div><span>{rows.reduce((total, row) => total + row.researchers.length, 0)} investigadores asignados</span></div>
+          <div className="member-grid">
+            {rows.map(({ member, researchers }) => <details className="member-folder" key={member.id}>
+              <summary><span className="member-folder__avatar">{member.name.charAt(0)}</span><span><strong>{member.name}</strong><small>{member.email}</small></span><b>{researchers.length}<i>asignados</i></b><em>⌄</em></summary>
+              <div className="member-folder__inside">{researchers.length ? researchers.map(({ student, submission }) => <div key={student.id} className="member-researcher"><span><strong>{student.name}</strong><small>{submission?.title ?? 'Sin investigación enviada'}</small></span><span className={`stage-chip stage-chip--${submission?.classificationStatus === 'classified' ? 'evaluation' : 'stratification'}`}>{stage(submission)}</span></div>) : <p>Este miembro no tiene investigadores asignados.</p>}</div>
+            </details>)}
           </div>
-        )}
-      </div>
+        </section>
+      </>}
     </div>
-  );
+  </div>;
 }

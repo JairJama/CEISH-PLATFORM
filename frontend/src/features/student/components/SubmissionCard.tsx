@@ -18,6 +18,13 @@ function formatDateTime(iso: string): string {
   });
 }
 
+function documentKind(document: StudentSubmission['documents'][number]) {
+  const name = document.name.toLowerCase();
+  if (document.mimeType.includes('pdf') || name.endsWith('.pdf')) return 'PDF';
+  if (document.mimeType.includes('spreadsheet') || /\.xlsx?$/.test(name)) return 'XLS';
+  return 'DOC';
+}
+
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente de revisión', cls: 'badge--warning' },
   'under-review': { label: 'En revisión', cls: 'badge--info' },
@@ -87,6 +94,7 @@ export function SubmissionCard({ submission, onView, onEdit, onDelete, onSubmitC
         <ul>
           {submission.documents.map((document) => (
             <li key={document.id}>
+              <span className={`document-file-icon document-file-icon--${documentKind(document).toLowerCase()}`}>{documentKind(document)}</span>
               <div>
                 <strong>{document.name}</strong>
                 <span>{(document.sizeBytes / 1024 / 1024).toFixed(2)} MB</span>

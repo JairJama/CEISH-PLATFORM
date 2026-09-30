@@ -111,8 +111,8 @@ function QualificationCard({ task, onChanged }: { task: QualificationTask; onCha
   };
 
   return (
-    <article className="qualification-card">
-      <div className="qualification-card__header">
+    <details className="qualification-card workflow-folder">
+      <summary className="qualification-card__header">
         <div>
           <span className="qualification-card__cycle">Ciclo {task.current_cycle}</span>
           <h2>{task.document_name}</h2>
@@ -121,7 +121,8 @@ function QualificationCard({ task, onChanged }: { task: QualificationTask; onCha
         <span className={`badge ${task.status === 'approved' ? 'badge--success' : closed ? 'badge--neutral' : 'badge--warning'}`}>
           {STATUS_LABEL[task.status]}
         </span>
-      </div>
+      </summary>
+      <div className="workflow-folder__body">
 
       {task.status === 'corrections-required' && (
         <div className="qualification-card__notice">
@@ -246,7 +247,8 @@ function QualificationCard({ task, onChanged }: { task: QualificationTask; onCha
         </button>
       </div>
       {message && <p className="qualification-card__message" role="status">{message}</p>}
-    </article>
+      </div>
+    </details>
   );
 }
 
