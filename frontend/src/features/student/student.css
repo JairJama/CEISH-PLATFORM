@@ -1,0 +1,237 @@
+.submission-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 680px;
+}
+
+.student-submissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.submission-card__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.submission-card__doc-icon { flex-shrink: 0; }
+
+.submission-card__info { flex: 1; min-width: 0; }
+
+.submission-card__filename {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.submission-card__code {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--c-primary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.submission-card__date {
+  font-size: 12px;
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+.submission-card__comment {
+  padding: 12px;
+  background: var(--c-surface-2);
+  border-radius: var(--r-md);
+  border-left: 3px solid var(--c-border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.submission-card__comment-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--c-text-subtle);
+}
+
+.submission-card__comment-text {
+  font-size: 13px;
+  color: var(--c-text-2);
+  line-height: 1.55;
+}
+
+.submission-card__documents {
+  padding: 13px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+}
+
+.submission-card__section-title,
+.submission-card__documents li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.submission-card__section-title { margin-bottom: 8px; color: var(--c-text-2); font-size: 12px; }
+.submission-card__section-title strong { color: var(--c-primary); }
+.submission-card__documents ul { display: flex; flex-direction: column; gap: 7px; list-style: none; }
+.submission-card__documents li { padding-top: 7px; border-top: 1px solid var(--c-border); }
+.submission-card__documents li div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.submission-card__documents li strong { overflow: hidden; color: var(--c-text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.submission-card__documents li span { color: var(--c-text-muted); font-size: 10px; }
+.submission-card__documents li .eval-btn { flex-shrink: 0; padding: 5px 9px; }
+
+.submission-card__annex {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--c-success-border);
+  border-radius: var(--r-md);
+  background: var(--c-success-bg);
+}
+.submission-card__annex strong { color: var(--c-success-text); font-size: 12px; }
+
+.submission-card__classification {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 13px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--c-primary-border);
+  background: var(--c-primary-light);
+  color: var(--c-text-2);
+  font-size: 13px;
+}
+
+.submission-card__classification--done {
+  border-color: var(--c-success-border);
+  background: var(--c-success-bg);
+}
+
+.submission-card__classification--cancelled {
+  border-color: var(--c-danger-border);
+  background: var(--c-danger-bg);
+  color: var(--c-danger-text);
+}
+
+.submission-card__classification strong { color: var(--c-success-text); }
+
+.submission-card__qualification {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  padding: 14px; border: 1px solid var(--c-primary-border);
+  border-radius: var(--r-md); background: var(--c-primary-light);
+  color: var(--c-text-2); font-size: 13px;
+}
+.submission-card__qualification--corrections-required { background: #fffbeb; border-color: #fde68a; }
+.submission-card__qualification--corrections-required strong { color: #92400e; }
+.submission-card__qualification--approved { background: var(--c-success-bg); border-color: var(--c-success-border); }
+.submission-card__qualification--approved strong { color: var(--c-success-text); }
+.submission-card__qualification--cancelled,
+.submission-card__qualification--expired { background: var(--c-danger-bg); border-color: var(--c-danger-border); }
+.submission-card__qualification--cancelled strong,
+.submission-card__qualification--expired strong { color: var(--c-danger-text); }
+.submission-card__qualification-observations { width: 100%; padding-top: 8px; border-top: 1px solid rgba(148, 163, 184, .3); }
+.submission-card__qualification-observations span { font-size: 11px; font-weight: 700; color: var(--c-text-muted); }
+.submission-card__qualification-observations p { margin-top: 4px; line-height: 1.55; white-space: pre-wrap; }
+.submission-card__deadline { font-size: 12px; font-weight: 600; color: #92400e; }
+
+.submission-card__result {
+  border-top: 1px solid var(--c-border);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.submission-card__grade {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.submission-card__grade-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text-muted);
+}
+
+.submission-card__grade-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--c-success-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.submission-card__grade-max {
+  font-size: 14px;
+  color: var(--c-text-muted);
+  font-weight: 400;
+}
+
+.submission-card__review-date {
+  font-size: 12px;
+  color: var(--c-text-muted);
+}
+
+.submission-card__final-comment {
+  padding: 12px;
+  background: var(--c-success-bg);
+  border: 1px solid var(--c-success-border);
+  border-radius: var(--r-md);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.submission-card__actions {
+  display: flex;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.upload-zone__error {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--c-danger, #dc2626);
+}
+
+.upload-zone--multiple {
+  width: 100%;
+  color: inherit;
+  background: var(--c-surface);
+  font: inherit;
+}
+
+.upload-file-list { display: flex; flex-direction: column; gap: 7px; list-style: none; }
+.upload-file-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 11px; border: 1px solid var(--c-border); border-radius: var(--r-md); background: var(--c-surface-2); }
+.upload-file-list li div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.upload-file-list strong { overflow: hidden; color: var(--c-text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.upload-file-list span { color: var(--c-text-muted); font-size: 10px; }
+.upload-file-list button { border: 0; color: var(--c-danger); background: transparent; font-size: 11px; font-weight: 700; cursor: pointer; }
+
+/* Dark dashboard card treatment */
+.student-submissions-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: start; gap: 14px; }
+.submission-card { max-width: none; min-height: 265px; padding: 18px; background: #12161b; border-color: #2a3038; border-radius: 9px; }
+.submission-card:hover { border-color: #404852; box-shadow: 0 18px 34px rgb(0 0 0 / .2); }
+.submission-card__code { color: #8c95a1; }
+.submission-card__comment, .submission-card__documents, .submission-card__classification, .submission-card__qualification { background: #171b20; border-color: #30363f; }
+.submission-card__comment { border-left-color: #ef3e3a; }
+.submission-card__annex { background: #112a20; }
+.upload-zone--multiple, .upload-file-list li { background: #12161b; border-color: #343b45; }
+.student-new-research{background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:#ff706c!important}.student-new-research:hover{background:#2b1a1d!important;border-color:#643236!important}.document-file-icon{display:grid;width:32px;height:34px;place-items:center;border:1px solid #46505b;border-radius:5px;background:#1a1f25;color:#c5ccd4;font-size:9px;font-weight:800}.document-file-icon--pdf{border-color:#74383c;color:#ff8a86;background:#351d20}.document-file-icon--xls{border-color:#275d43;color:#76dba2;background:#112a20}.submission-card__documents li{align-items:center}.submission-card__documents li>div{flex:1}
