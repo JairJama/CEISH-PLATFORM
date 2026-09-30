@@ -1,4 +1,4 @@
-import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { logout as logoutSession } from '../../services/authService';
 import { useAuthStore } from '../../store/authStore';
 import { cn } from '../../utils/cn';
@@ -106,6 +106,7 @@ const ROLE_LABEL = { student: 'Investigador', evaluator: 'Estratificador CEISH',
 export function AppShell() {
   const { currentUser, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     await logoutSession();
@@ -118,19 +119,27 @@ export function AppShell() {
   }
 
   const navItems = ROLE_NAV[currentUser.role];
+  const activeItem = navItems.find((item) => location.pathname === item.to) ?? navItems[0];
 
   return (
     <div className="shell">
       <aside className="shell__sidebar">
         <div className="shell__brand">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <rect width="24" height="24" rx="6" fill="#2563eb" />
-            <path d="M6 8h12M6 12h12M6 16h7" stroke="white" strokeWidth="1.6" strokeLinecap="round" />
+          <svg className="shell__brand-mark" width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true">
+            <rect width="34" height="34" rx="10" fill="currentColor" />
+            <path d="M17 7.5l8 3.8v5.1c0 5.1-3.4 8.6-8 10.1-4.6-1.5-8-5-8-10.1v-5.1l8-3.8z" stroke="white" strokeWidth="1.8" strokeLinejoin="round" />
+            <path d="M13.4 17l2.3 2.3 4.9-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <span className="shell__brand-name">CEISH</span>
+          <span><span className="shell__brand-name">CEISH</span><span className="shell__brand-subtitle">PLATFORM</span></span>
+        </div>
+
+        <div className="shell__workspace">
+          <span className="shell__workspace-icon">⌑</span>
+          <span><small>Espacio de trabajo</small><strong>{ROLE_LABEL[currentUser.role]}</strong></span>
         </div>
 
         <nav className="shell__nav">
+          <p className="shell__nav-title">MENÚ PRINCIPAL</p>
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -158,9 +167,21 @@ export function AppShell() {
         </div>
       </aside>
 
-      <main className="shell__content">
-        <Outlet />
-      </main>
+      <section className="shell__main">
+        <header className="shell__topbar">
+          <div className="shell__breadcrumb"><span>Panel</span><b>›</b><strong>{activeItem.label}</strong></div>
+          <div className="shell__topbar-actions">
+            <button className="shell__notification" aria-label="Notificaciones">
+              <svg width="19" height="19" viewBox="0 0 19 19" fill="none"><path d="M15.5 8.1c0-3.4-1.8-5.6-5-5.6s-5 2.2-5 5.6c0 3.8-1.5 4.7-1.5 5.6h13c0-.9-1.5-1.8-1.5-5.6zM8.4 16.3h4.2" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              <i />
+            </button>
+            <span className="shell__topbar-avatar">{currentUser.name.charAt(0)}</span>
+          </div>
+        </header>
+        <main className="shell__content">
+          <Outlet />
+        </main>
+      </section>
     </div>
   );
 }
