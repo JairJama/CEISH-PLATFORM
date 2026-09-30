@@ -189,13 +189,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
         >
           Recuperar acceso
         </a>
-        <a
-          href="#support"
-          className="login-form__link"
-          style={{ color: colors.gray[700], border: `1px solid ${colors.border}` }}
-        >
-          Centro de ayuda
-        </a>
       </div>
 
       {/* Footer */}

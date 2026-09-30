@@ -326,24 +326,53 @@ export class StratificationService {
       );
     }
 
-    const annex27 = assignment.annexes.find(
-      (a) => a.annexNumber === 27 && a.status !== "voided",
-    );
-    if (!annex27) {
-      throw new ConflictException("No se encontró el borrador del Anexo 27");
-    }
+    let annex27Id: string | null = null;
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.researchAnnex.update({
-        where: { id: annex27.id },
-        data: {
-          status: "completed",
-          data: { ...annex, finalRiskLevel: "no-risk" },
-          completedBy: stratifierId,
-          completedAt: new Date(),
-          updatedAt: new Date(),
+      // Los casos históricos pueden tener el Anexo 23 completado antes de que
+      // el flujo empezara a crear el borrador 27 automáticamente. Serializamos
+      // por asignación para recuperar ese estado sin crear emisiones duplicadas.
+      await tx.$executeRaw`
+        SELECT pg_advisory_xact_lock(hashtext(${assignment.id}))
+      `;
+
+      const existingAnnex27 = await tx.researchAnnex.findFirst({
+        where: {
+          assignmentId: assignment.id,
+          annexNumber: 27,
+          status: { not: "voided" },
         },
+        orderBy: { createdAt: "desc" },
       });
+      const annexData = { ...annex, finalRiskLevel: "no-risk" };
+
+      if (existingAnnex27) {
+        const updatedAnnex27 = await tx.researchAnnex.update({
+          where: { id: existingAnnex27.id },
+          data: {
+            status: "completed",
+            data: annexData,
+            completedBy: stratifierId,
+            completedAt: new Date(),
+            updatedAt: new Date(),
+          },
+        });
+        annex27Id = updatedAnnex27.id;
+      } else {
+        const recoveredAnnex27 = await tx.researchAnnex.create({
+          data: {
+            submissionId: assignment.submissionId,
+            assignmentId: assignment.id,
+            annexNumber: 27,
+            status: "completed",
+            data: annexData,
+            createdBy: stratifierId,
+            completedBy: stratifierId,
+            completedAt: new Date(),
+          },
+        });
+        annex27Id = recoveredAnnex27.id;
+      }
 
       await tx.stratificationAssignment.update({
         where: { id: assignment.id },
@@ -380,7 +409,7 @@ export class StratificationService {
     });
 
     // Generar DOCX del Anexo 27
-    await this.regenerateAnnexDocx(annex27.id);
+    await this.regenerateAnnexDocx(annex27Id!);
 
     return {
       result: "classified",

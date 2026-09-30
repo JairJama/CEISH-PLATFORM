@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { platformService } from '../../../shared/services/platformService';
+import { Link } from 'react-router-dom';
 import type { User } from '../../../shared/types/platform.types';
 import { workflowService, type AdminResearchItem } from '../../../services/workflowService';
 import '../admin.css';
@@ -13,7 +13,7 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: 'Cancelada',
 };
 
-function ResearchRow({
+export function ResearchRow({
   research,
   members,
   onChanged,
@@ -97,7 +97,7 @@ function ResearchRow({
   };
 
   return (
-    <article className="research-management-card">
+    <article className="research-management-card research-folder research-folder--detail">
       <div className="research-management-card__header">
         <div>
           <h2>{research.document_name}</h2>
@@ -107,6 +107,9 @@ function ResearchRow({
           {STATUS_LABEL[research.classification_status] ?? research.classification_status}
         </span>
       </div>
+
+      <div className="research-folder__content">
+      <div className="research-folder__timeline"><span className={research.classification_status === 'awaiting-first' ? 'is-current' : ''}>1. Estratificación</span><span className={research.classification_status === 'classified' ? 'is-current' : ''}>2. Evaluación</span><span className={research.qualification_status === 'approved' ? 'is-current' : ''}>3. Dictamen</span></div>
 
       <div className="research-management-card__assignment">
         <span>Estratificador asignado</span>
@@ -167,7 +170,7 @@ function ResearchRow({
         )}
       </div>
       {research.annexes.length > 0 && (
-        <section className="research-management-card__annexes" aria-label="Anexos generados">
+        <aside className="research-management-card__annexes" aria-label="Anexos generados">
           <strong>Anexos Word generados</strong>
           <ul>
             {research.annexes.map((annex) => (
@@ -188,29 +191,39 @@ function ResearchRow({
               </li>
             ))}
           </ul>
-        </section>
+        </aside>
       )}
       {message && <p className="research-management-card__message" role="status">{message}</p>}
+      </div>
     </article>
+  );
+}
+
+export function ResearchFolderCard({ research }: { research: AdminResearchItem }) {
+  const status = STATUS_LABEL[research.classification_status] ?? research.classification_status;
+  const phase = research.classification_status === 'classified' ? 'Evaluación ética' : 'Estratificación';
+  return (
+    <Link className="research-folder-card" to={`/admin/investigaciones/${research.submission_id}`}>
+      <div className="research-folder-card__tab">EXPEDIENTE · {research.submission_id.slice(0, 8).toUpperCase()}</div>
+      <div className="research-folder-card__icon" aria-hidden="true">▤</div>
+      <span className="research-folder-card__status">{status}</span>
+      <h2>{research.document_name}</h2>
+      <p>{research.researcher_name}</p>
+      <div className="research-folder-card__meta"><span>{phase}</span><span>{research.annexes.length} documentos</span></div>
+      <span className="research-folder-card__open">Abrir expediente <b>→</b></span>
+    </Link>
   );
 }
 
 export function ResearchManagementPanel() {
   const [research, setResearch] = useState<AdminResearchItem[]>([]);
-  const [members, setMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const reload = async () => {
-    const data = await workflowService.getAdminResearch();
-    setResearch(data);
-  };
-
   useEffect(() => {
-    void Promise.all([workflowService.getAdminResearch(), platformService.getUsers()])
-      .then(([researchData, users]) => {
+    void workflowService.getAdminResearch()
+      .then((researchData) => {
         setResearch(researchData);
-        setMembers(users.filter((user) => user.role === 'evaluator'));
       })
       .catch((cause: Error) => setError(cause.message))
       .finally(() => setLoading(false));
@@ -231,8 +244,8 @@ export function ResearchManagementPanel() {
         ) : research.length === 0 ? (
           <div className="empty-state"><p className="empty-state__title">No hay investigaciones enviadas</p></div>
         ) : (
-          <div className="research-management-list">
-            {research.map((item) => <ResearchRow key={item.submission_id} research={item} members={members} onChanged={reload} />)}
+          <div className="research-folder-grid">
+            {research.map((item) => <ResearchFolderCard key={item.submission_id} research={item} />)}
           </div>
         )}
       </div>

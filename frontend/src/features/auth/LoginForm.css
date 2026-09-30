@@ -42,6 +42,7 @@
 .login-form__alert--success .login-form__alert-text { color: #8ae4b5; }
 .registration-form__type { color: #c9ced5; }
 .registration-form__type label { padding: 8px 10px; border: 1px solid #333943; border-radius: 7px; background: #101317; }
+.login-form__links{display:grid;grid-template-columns:1fr 1fr}.login-form__link{padding:11px 8px;border-radius:7px}.login-form__submit button{background-image:linear-gradient(135deg,#ef4945,#d92f2c)!important}.registration-form__choices{display:grid;grid-template-columns:1fr 1fr;gap:9px}.registration-form__choices label{gap:8px;padding:11px!important;cursor:pointer}.registration-form__choices label.is-selected{border-color:#ef4b47;background:#2b1a1d}.registration-form__choices input{accent-color:#ef4b47;width:auto!important}.registration-form__choices strong{display:block;font-size:11px}.registration-form__choices small{display:block;color:#858d98;font-size:10px}
 
 @media (max-width: 860px) { .auth-layout { grid-template-columns: 1fr; } .auth-layout__aside { display: none; } .auth-layout__form-area { min-height: 100dvh; justify-content: center; padding: 28px 20px; } .auth-layout__mobile-brand { display: block; margin-bottom: 30px; } }
 @media (max-width: 430px) { .auth-layout__content > div { padding: 24px !important; } .login-form__links { display: grid; grid-template-columns: 1fr; } }

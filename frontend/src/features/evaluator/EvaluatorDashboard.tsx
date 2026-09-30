@@ -5,13 +5,13 @@ import type { User, StudentSubmission } from '../../shared/types/platform.types'
 import { StudentCard } from './components/StudentCard';
 import './evaluator.css';
 
-type Filter = 'all' | 'with-doc' | 'without-doc' | 'reviewed';
+type Filter = 'all' | 'stratification' | 'evaluation' | 'completed';
 
 const FILTER_LABELS: Record<Filter, string> = {
   all: 'Todos',
-  'with-doc': 'Con documento',
-  'without-doc': 'Sin documento',
-  reviewed: 'Revisados',
+  stratification: 'Estratificación',
+  evaluation: 'Evaluación',
+  completed: 'Finalizadas',
 };
 
 interface StudentRow {
@@ -23,6 +23,7 @@ export function EvaluatorDashboard() {
   const currentUser = useAuthStore((s) => s.currentUser)!;
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,23 +47,23 @@ export function EvaluatorDashboard() {
   }, [currentUser.id]);
 
   const filtered = rows.filter((r) => {
-    if (filter === 'with-doc') return r.submission !== null;
-    if (filter === 'without-doc') return r.submission === null;
-    if (filter === 'reviewed') return r.submission?.status === 'reviewed';
-    return true;
+    const phase = !r.submission ? 'stratification' : r.submission.classificationStatus === 'classified'
+      ? (r.submission.qualificationStatus === 'approved' ? 'completed' : 'evaluation') : 'stratification';
+    return (filter === 'all' || phase === filter) && `${r.student.name} ${r.student.email}`.toLowerCase().includes(search.toLowerCase());
   });
 
   return (
     <div className="page">
       <div className="page__header">
         <div>
-          <h1 className="page__title">Mis estudiantes</h1>
-          <p className="page__subtitle">{rows.length} estudiantes asignados</p>
+          <h1 className="page__title">Investigadores</h1>
+          <p className="page__subtitle">{rows.length} investigadores asignados y su etapa actual.</p>
         </div>
       </div>
 
       <div className="page__body">
         <div className="filter-bar">
+          <input className="filter-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar investigador..." />
           {(Object.keys(FILTER_LABELS) as Filter[]).map((f) => (
             <button
               key={f}

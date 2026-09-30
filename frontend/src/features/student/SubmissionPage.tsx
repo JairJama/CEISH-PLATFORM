@@ -75,7 +75,7 @@ export function SubmissionPage() {
           <p className="page__subtitle">Envía y da seguimiento independiente a cada investigación</p>
         </div>
         {!loading && (
-          <button className="eval-btn eval-btn--primary" onClick={() => { setEditingSubmission(null); setModalMode('create'); }}>
+          <button className="eval-btn eval-btn--primary student-new-research" onClick={() => { setEditingSubmission(null); setModalMode('create'); }}>
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
               <path d="M7.5 2v11M2 7.5h11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>

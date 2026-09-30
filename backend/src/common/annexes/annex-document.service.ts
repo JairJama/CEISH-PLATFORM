@@ -234,8 +234,6 @@ export class AnnexDocumentService {
   private getTemplatePath(annexNumber: number): string {
     return path.resolve(
       process.cwd(),
-      "..",
-      "public",
       "annex-templates",
       `anexo-${annexNumber}.docx`,
     );

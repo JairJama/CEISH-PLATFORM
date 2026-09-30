@@ -234,3 +234,4 @@
 .submission-card__comment { border-left-color: #ef3e3a; }
 .submission-card__annex { background: #112a20; }
 .upload-zone--multiple, .upload-file-list li { background: #12161b; border-color: #343b45; }
+.student-new-research{background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:#ff706c!important}.student-new-research:hover{background:#2b1a1d!important;border-color:#643236!important}.document-file-icon{display:grid;width:32px;height:34px;place-items:center;border:1px solid #46505b;border-radius:5px;background:#1a1f25;color:#c5ccd4;font-size:9px;font-weight:800}.document-file-icon--pdf{border-color:#74383c;color:#ff8a86;background:#351d20}.document-file-icon--xls{border-color:#275d43;color:#76dba2;background:#112a20}.submission-card__documents li{align-items:center}.submission-card__documents li>div{flex:1}

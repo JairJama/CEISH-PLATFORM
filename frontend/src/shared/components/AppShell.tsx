@@ -46,7 +46,7 @@ const EVALUATOR_NAV: NavItem[] = [
   },
   {
     to: '/evaluador',
-    label: 'Mis estudiantes',
+    label: 'Investigadores',
     icon: (
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
         <circle cx="9" cy="6" r="3" stroke="currentColor" strokeWidth="1.5" />
@@ -86,15 +86,6 @@ const ADMIN_NAV: NavItem[] = [
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
         <rect x="3" y="2" width="12" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
         <path d="M6 6h6M6 9h6M6 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    to: '/admin/asignaciones',
-    label: 'Asignaciones',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-        <path d="M9 2v14M2 9h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     ),
   },

@@ -369,8 +369,8 @@ function StratificationCard({ task, onSaved }: { task: StratificationTask; onSav
   const classified = task.classification_status === 'classified';
 
   return (
-    <article className="stratification-card">
-      <div className="stratification-card__header">
+    <details className="stratification-card workflow-folder">
+      <summary className="stratification-card__header">
         <div>
           <span className="stratification-card__round">{task.research_code} · Estratificador asignado</span>
           <h2>{task.title}</h2>
@@ -379,7 +379,8 @@ function StratificationCard({ task, onSaved }: { task: StratificationTask; onSav
         <span className={`badge ${classified ? 'badge--success' : cancelled ? 'badge--danger' : 'badge--warning'}`}>
           {classified ? 'Sin riesgo' : cancelled ? 'Cancelada' : task.has_conflict === false ? 'Anexo 27 pendiente' : 'Anexo 23 pendiente'}
         </span>
-      </div>
+      </summary>
+      <div className="workflow-folder__body">
 
       <div className="annex-timeline" aria-label="Estado de anexos">
         <span>Anexo 11 · Se emite al aprobar</span>
@@ -413,7 +414,8 @@ function StratificationCard({ task, onSaved }: { task: StratificationTask; onSav
       ) : (
         <Annex27Form task={task} onSaved={onSaved} />
       )}
-    </article>
+      </div>
+    </details>
   );
 }
 
