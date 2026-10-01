@@ -67,7 +67,7 @@ function Annex11Editor({ task, onSaved }: { task: StratificationTask; onSaved: (
   };
 
   return (
-    <details className="annex-editor">
+    <details className="annex-editor workflow-folder">
       <summary>Preparar datos del Anexo 11</summary>
       <form className="annex-form annex-form--compact" onSubmit={save}>
         <div className="annex-form__heading">
@@ -342,10 +342,18 @@ function Annex27Form({ task, onSaved }: { task: StratificationTask; onSaved: () 
 function ResearchDocuments({ task }: { task: StratificationTask }) {
   const [viewingDoc, setViewingDoc] = useState<{ url: string; name: string } | null>(null);
 
-  const openDocument = async (documentId: string, name: string) => {
+  const openDocument = async (documentId: string, name: string, download: boolean = false) => {
     try {
       const url = await storageService.getResearchDocumentUrl(documentId);
-      setViewingDoc({ url, name });
+      if (download) {
+        const link = window.document.createElement('a');
+        link.href = url;
+        link.download = name;
+        link.rel = 'noopener';
+        link.click();
+      } else {
+        setViewingDoc({ url, name });
+      }
     } catch (cause) {
       window.alert((cause as Error).message);
     }
@@ -361,7 +369,10 @@ function ResearchDocuments({ task }: { task: StratificationTask }) {
         {task.documents.map((document) => (
           <li key={document.id}>
             <span>{document.document_name}</span>
-            <button className="eval-btn eval-btn--outline" type="button" onClick={() => openDocument(document.id, document.document_name)}>Abrir</button>
+            <div>
+              <button className="eval-btn eval-btn--outline" type="button" onClick={() => openDocument(document.id, document.document_name, false)}>Abrir</button>
+              <button className="eval-btn eval-btn--primary" type="button" onClick={() => openDocument(document.id, document.document_name, true)}>Descargar</button>
+            </div>
           </li>
         ))}
       </ul>
@@ -404,7 +415,7 @@ function StratificationCard({ task, onSaved }: { task: StratificationTask; onSav
           <div className="stratification-card__result">
             Anexo 27 completado. Riesgo definido: <strong>Investigación sin riesgo</strong>.
           </div>
-          <details className="annex-editor">
+          <details className="annex-editor workflow-folder">
             <summary>Editar Anexo 27 y regenerar Word</summary>
             <Annex27Form task={task} onSaved={onSaved} />
           </details>

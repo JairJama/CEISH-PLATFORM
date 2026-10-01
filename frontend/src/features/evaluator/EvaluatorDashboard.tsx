@@ -16,7 +16,7 @@ const FILTER_LABELS: Record<Filter, string> = {
 
 interface StudentRow {
   student: User;
-  submission: StudentSubmission | null;
+  submissions: StudentSubmission[];
 }
 
 export function EvaluatorDashboard() {
@@ -38,7 +38,7 @@ export function EvaluatorDashboard() {
       const students = users.filter((u) => studentIds.includes(u.id));
       const result: StudentRow[] = students.map((s) => ({
         student: s,
-        submission: allSubs.find((sub) => sub.studentId === s.id) ?? null,
+        submissions: allSubs.filter((sub) => sub.studentId === s.id),
       }));
       setRows(result);
       setLoading(false);
@@ -47,8 +47,9 @@ export function EvaluatorDashboard() {
   }, [currentUser.id]);
 
   const filtered = rows.filter((r) => {
-    const phase = !r.submission ? 'stratification' : r.submission.classificationStatus === 'classified'
-      ? (r.submission.qualificationStatus === 'approved' ? 'completed' : 'evaluation') : 'stratification';
+    const latestSubmission = r.submissions.length > 0 ? r.submissions[r.submissions.length - 1] : null;
+    const phase = !latestSubmission ? 'stratification' : latestSubmission.classificationStatus === 'classified'
+      ? (latestSubmission.qualificationStatus === 'approved' ? 'completed' : 'evaluation') : 'stratification';
     return (filter === 'all' || phase === filter) && `${r.student.name} ${r.student.email}`.toLowerCase().includes(search.toLowerCase());
   });
 
@@ -84,7 +85,7 @@ export function EvaluatorDashboard() {
         ) : (
           <div className="student-list">
             {filtered.map((r) => (
-              <StudentCard key={r.student.id} student={r.student} submission={r.submission} />
+              <StudentCard key={r.student.id} student={r.student} submissions={r.submissions} />
             ))}
           </div>
         )}
