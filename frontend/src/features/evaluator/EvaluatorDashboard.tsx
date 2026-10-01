@@ -16,7 +16,8 @@ const FILTER_LABELS: Record<Filter, string> = {
 
 interface StudentRow {
   student: User;
-  submissions: StudentSubmission[];
+  submission: StudentSubmission | null;
+  allSubmissions: StudentSubmission[];
 }
 
 export function EvaluatorDashboard() {
@@ -38,7 +39,8 @@ export function EvaluatorDashboard() {
       const students = users.filter((u) => studentIds.includes(u.id));
       const result: StudentRow[] = students.map((s) => ({
         student: s,
-        submissions: allSubs.filter((sub) => sub.studentId === s.id),
+        allSubmissions: allSubs.filter((sub) => sub.studentId === s.id),
+        submission: allSubs.filter((sub) => sub.studentId === s.id).sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0] ?? null,
       }));
       setRows(result);
       setLoading(false);
@@ -47,9 +49,8 @@ export function EvaluatorDashboard() {
   }, [currentUser.id]);
 
   const filtered = rows.filter((r) => {
-    const latestSubmission = r.submissions.length > 0 ? r.submissions[r.submissions.length - 1] : null;
-    const phase = !latestSubmission ? 'stratification' : latestSubmission.classificationStatus === 'classified'
-      ? (latestSubmission.qualificationStatus === 'approved' ? 'completed' : 'evaluation') : 'stratification';
+    const phase = !r.submission ? 'stratification' : r.submission.classificationStatus === 'classified'
+      ? (r.submission.qualificationStatus === 'approved' ? 'completed' : 'evaluation') : 'stratification';
     return (filter === 'all' || phase === filter) && `${r.student.name} ${r.student.email}`.toLowerCase().includes(search.toLowerCase());
   });
 
@@ -85,7 +86,7 @@ export function EvaluatorDashboard() {
         ) : (
           <div className="student-list">
             {filtered.map((r) => (
-              <StudentCard key={r.student.id} student={r.student} submissions={r.submissions} />
+              <StudentCard key={r.student.id} student={r.student} submission={r.submission} allSubmissions={r.allSubmissions} />
             ))}
           </div>
         )}
