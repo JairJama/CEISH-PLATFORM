@@ -4,6 +4,7 @@ import { useReview } from '../hooks/useReview';
 import { usePDFViewer } from '../../../features/evaluation/hooks/usePDFViewer';
 import { PDFViewer } from '../../../features/evaluation/components/PDFViewer/PDFViewer';
 import { CriteriaPanel } from '../../../features/evaluation/components/CriteriaPanel/CriteriaPanel';
+import { DocxViewer } from '../../../features/evaluation/components/DocxViewer';
 import { StageNav } from './StageNav';
 import { platformService } from '../../../shared/services/platformService';
 import { storageService } from '../../../services/storage';
@@ -191,21 +192,26 @@ export function ReviewPage() {
       {/* ── Two-panel body (reuses existing components) ── */}
       <div className="eval-body">
         <main className="eval-pdf-panel">
-          <PDFViewer
-            file={pdf.pdfFile}
-            currentPage={pdf.currentPage}
-            totalPages={pdf.totalPages}
-            zoom={pdf.zoom}
-            isLoading={pdf.isLoading}
-            onLoadSuccess={pdf.setTotalPages}
-            onLoadFile={pdf.loadFile}
-            onPrevPage={pdf.prevPage}
-            onNextPage={pdf.nextPage}
-            onZoomIn={pdf.zoomIn}
-            onZoomOut={pdf.zoomOut}
-            onResetZoom={pdf.resetZoom}
-            onPageChange={pdf.goToPage}
-          />
+          {submission && !submission.documentName.toLowerCase().endsWith('.pdf') ? (
+            <DocxViewer url={storageService.getRawUrl(submissionId)} />
+          ) : (
+            <PDFViewer
+              file={pdf.pdfFile}
+              currentPage={pdf.currentPage}
+              totalPages={pdf.totalPages}
+              zoom={pdf.zoom}
+              isLoading={pdf.isLoading}
+              onLoadSuccess={pdf.setTotalPages}
+              onLoadError={pdf.onLoadError}
+              onLoadFile={pdf.loadFile}
+              onPrevPage={pdf.prevPage}
+              onNextPage={pdf.nextPage}
+              onZoomIn={pdf.zoomIn}
+              onZoomOut={pdf.zoomOut}
+              onResetZoom={pdf.resetZoom}
+              onPageChange={pdf.goToPage}
+            />
+          )}
         </main>
         <CriteriaPanel
           session={stageAsSession}

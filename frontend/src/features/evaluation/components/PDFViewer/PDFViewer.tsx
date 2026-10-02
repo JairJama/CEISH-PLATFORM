@@ -23,6 +23,7 @@ interface Props {
   onZoomOut: () => void;
   onResetZoom: () => void;
   onPageChange: (page: number) => void;
+  onLoadError?: () => void;
 }
 
 export function PDFViewer({
@@ -39,6 +40,7 @@ export function PDFViewer({
   onZoomOut,
   onResetZoom,
   onPageChange,
+  onLoadError,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -119,6 +121,7 @@ export function PDFViewer({
         <Document
           file={file}
           onLoadSuccess={({ numPages }) => onLoadSuccess(numPages)}
+          onLoadError={onLoadError}
           className="pdf-document"
           loading=""
           error={

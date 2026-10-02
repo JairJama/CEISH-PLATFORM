@@ -105,16 +105,16 @@ export function UploadModal({
                 <rect width="40" height="40" rx="10" fill="#f1f5f9" />
                 <path d="M20 12v16M12 20h16" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
               </svg>
-              <p className="upload-zone__empty-title">Adjunta uno o varios documentos Word</p>
+              <p className="upload-zone__empty-title">Adjunta uno o varios documentos Word o PDF</p>
               <p className="upload-zone__empty-desc">
-                .DOC o .DOCX · hasta {MAX_FILES} archivos · máx. {MAX_MB} MB cada uno
+                .DOC, .DOCX o .PDF · hasta {MAX_FILES} archivos · máx. {MAX_MB} MB cada uno
               </p>
             </div>
           </button>
           <input
             ref={fileRef}
             type="file"
-            accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            accept=".doc,.docx,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
             multiple
             onChange={handleFiles}
             hidden
