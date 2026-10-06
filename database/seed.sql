@@ -32,6 +32,20 @@ INSERT INTO users (id, name, email, password, role_id) VALUES
   ('c0000000-0000-0000-0000-000000000002', 'María López',  'maria@ceish.edu',   'scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '11111111-1111-1111-1111-111111111111'),
   ('c0000000-0000-0000-0000-000000000003', 'Carlos Ruiz',  'carlos@ceish.edu',  'scrypt$ceish-demo-salt$004b4334e2bed3392d1bde96cc8e586ce71017f4d2e41f6881ebd61330157250233389a55c5a3d120e024b589df757924ae011001fe61d34b1f46259a9db27cd', '11111111-1111-1111-1111-111111111111');
 
+-- La seed debe dejar siempre disponibles los siete miembros CEISH iniciales.
+DO $$
+DECLARE
+  expected_member_emails CONSTANT text[] := ARRAY[
+    'miembro@ceish.edu', 'miembro01@ceish.edu', 'miembro02@ceish.edu',
+    'miembro03@ceish.edu', 'miembro04@ceish.edu', 'miembro05@ceish.edu',
+    'miembro06@ceish.edu'
+  ];
+BEGIN
+  IF (SELECT count(*) FROM users WHERE email = ANY (expected_member_emails)) <> 7 THEN
+    RAISE EXCEPTION 'La seed no pudo crear los siete miembros CEISH iniciales';
+  END IF;
+END $$;
+
 -- ----------------------------------------------------------------------------
 -- assignments  (el profesor demo tiene 3 estudiantes asignados)
 -- ----------------------------------------------------------------------------
