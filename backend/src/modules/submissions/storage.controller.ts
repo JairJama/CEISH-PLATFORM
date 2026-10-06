@@ -22,6 +22,18 @@ import { SubmissionsService } from "./submissions.service";
 
 const MAX_BYTES = 15 * 1024 * 1024; // 15 MB
 
+/**
+ * Busboy/Multer may expose an UTF-8 filename as a Latin-1 string because the
+ * multipart `filename` parameter has no declared charset. Only decode strings
+ * with the characteristic mojibake markers and keep valid names unchanged.
+ */
+function normalizeUploadFilename(filename: string): string {
+  if (!/[ÃÂâ]/.test(filename)) return filename;
+
+  const decoded = Buffer.from(filename, "latin1").toString("utf8");
+  return decoded.includes("�") ? filename : decoded;
+}
+
 @Controller()
 @UseGuards(AuthGuard, RolesGuard)
 export class StorageController {
@@ -42,7 +54,8 @@ export class StorageController {
         "El archivo supera el límite de 15 MB",
       );
     }
-    const ext = file.originalname.toLowerCase().match(/\.(docx?|pdf)$/)?.[0];
+    const originalName = normalizeUploadFilename(file.originalname);
+    const ext = originalName.toLowerCase().match(/\.(docx?|pdf)$/)?.[0];
     if (!ext) {
       throw new BadRequestException(
         "Solo se permiten documentos Word (.doc, .docx) o PDF",
@@ -58,13 +71,13 @@ export class StorageController {
 
     const documentPath = await this.minioService.uploadDocument(
       file.buffer,
-      file.originalname,
+      originalName,
       mimeType,
     );
 
     return {
       documentPath,
-      documentName: file.originalname,
+      documentName: originalName,
       mimeType,
       size: file.size,
     };

@@ -20,6 +20,7 @@ import { CurrentUser, Roles } from "../../common/decorators";
 import type { SessionUser } from "../../common/auth/session.util";
 
 class CreateSubmissionBodyDto {
+  researchType!: "scientific" | "clinical" | "social";
   title!: string;
   comment?: string;
   documents!: Array<{
@@ -69,13 +70,14 @@ export class SubmissionsController {
     @CurrentUser() user: SessionUser,
     @Body() body: CreateSubmissionBodyDto,
   ) {
-    if (!body.title || !body.documents || !body.documents.length) {
+    if (!body.researchType || !body.title || !body.documents || !body.documents.length) {
       throw new BadRequestException(
-        "El título y al menos un documento Word válido son requeridos",
+        "El tipo, título y anexos de la investigación son requeridos",
       );
     }
     return this.submissionsService.createSubmission({
       studentId: user.id,
+      researchType: body.researchType,
       title: body.title,
       comment: body.comment,
       documents: body.documents,

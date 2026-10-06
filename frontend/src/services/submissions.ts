@@ -6,7 +6,7 @@
 
 import { storageService } from './storage';
 import { platformService } from '../shared/services/platformService';
-import type { StudentSubmission } from '../shared/types/platform.types';
+import type { ResearchType, StudentSubmission } from '../shared/types/platform.types';
 
 export const submissionsService = {
   /** Entrega del estudiante (o null). */
@@ -22,6 +22,7 @@ export const submissionsService = {
   /** Sube el conjunto documental y crea la investigación. */
   async createWithDocuments(
     studentId: string,
+    researchType: ResearchType,
     title: string,
     files: File[],
     comment: string,
@@ -33,7 +34,7 @@ export const submissionsService = {
       mimeType: document.mimeType,
       sizeBytes: document.size,
     }));
-    return platformService.createSubmission(studentId, title, comment, documents);
+    return platformService.createSubmission(studentId, researchType, title, comment, documents);
   },
 
   /** Reemplaza el conjunto documental de una investigación aún no revisada. */

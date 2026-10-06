@@ -10,6 +10,7 @@ export interface User {
 }
 
 export type SubmissionStatus = 'pending' | 'under-review' | 'reviewed';
+export type ResearchType = 'scientific' | 'clinical' | 'social';
 export type ClassificationStatus =
   | 'awaiting-assignment'
   | 'awaiting-first'
@@ -38,6 +39,7 @@ export interface StudentSubmission {
   id: string;
   studentId: string;
   researchCode: string;
+  researchType: ResearchType;
   title: string;
   documentName: string;
   documents: ResearchDocument[];

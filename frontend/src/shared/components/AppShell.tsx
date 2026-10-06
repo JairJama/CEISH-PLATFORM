@@ -13,7 +13,7 @@ interface NavItem {
 const STUDENT_NAV: NavItem[] = [
   {
     to: '/estudiante',
-    label: 'Mi entrega',
+    label: 'Investigaciones',
     icon: (
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
         <path d="M4 2h10a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" />

@@ -67,6 +67,8 @@ CREATE TABLE submissions (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   research_code VARCHAR(11) NOT NULL UNIQUE,
+  research_type VARCHAR(30) NOT NULL DEFAULT 'scientific'
+                  CHECK (research_type IN ('scientific', 'clinical', 'social')),
   title         TEXT NOT NULL,
   document_name VARCHAR(255) NOT NULL,           -- nombre original del archivo
   document_path TEXT,                            -- clave del objeto en MinIO (bucket "documents")
@@ -89,6 +91,7 @@ CREATE TABLE submissions (
 
 CREATE INDEX idx_submissions_student ON submissions(student_id);
 CREATE INDEX idx_submissions_status  ON submissions(status);
+CREATE INDEX idx_submissions_research_type ON submissions(research_type);
 
 -- ----------------------------------------------------------------------------
 -- submission_documents

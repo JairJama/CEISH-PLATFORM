@@ -36,7 +36,7 @@ async function apiSend<T>(method: string, path: string, body?: unknown): Promise
 interface UserDTO { id: string; name: string; email: string; role: string }
 interface SubmissionDTO {
   id: string; student_id: string; document_name: string; document_path: string | null;
-  research_code: string; title: string;
+  research_code: string; research_type: StudentSubmission['researchType']; title: string;
   comment: string; status: string; submitted_at: string;
   reviewed_at: string | null; grade: number | null; final_comment: string | null;
   classification_status: StudentSubmission['classificationStatus'];
@@ -71,6 +71,17 @@ const STAGE_NAMES = ['Estructura', 'Metodología', 'Resultados', 'Formato'];
 const num = (v: number | string | null): number | undefined =>
   v == null ? undefined : Number(v);
 
+function repairMojibake(value: string): string {
+  if (!/[ÃÂâ]/.test(value)) return value;
+  try {
+    const bytes = Uint8Array.from(value, (character) => character.charCodeAt(0));
+    const decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    return decoded.includes('�') ? value : decoded;
+  } catch {
+    return value;
+  }
+}
+
 function mapRole(dbRole: string): UserRole {
   const normalized = dbRole.trim().toLowerCase().replace(/[\s-]+/g, '_');
   return ['teacher', 'evaluator', 'member', 'miembro', 'ceish', 'ceish_member', 'miembro_ceish'].includes(normalized)
@@ -91,22 +102,23 @@ function mapSubmission(d: SubmissionDTO): StudentSubmission {
     id: d.id,
     studentId: d.student_id,
     researchCode: d.research_code,
-    title: d.title,
-    documentName: d.document_name,
+    researchType: d.research_type,
+    title: repairMojibake(d.title),
+    documentName: repairMojibake(d.document_name),
     documents: d.documents.map((document) => ({
       id: document.id,
-      name: document.document_name,
+      name: repairMojibake(document.document_name),
       mimeType: document.mime_type,
       sizeBytes: Number(document.size_bytes),
       uploadedAt: document.uploaded_at,
     })),
     annex11Status: d.annex_11_status ?? undefined,
-    comment: d.comment,
+    comment: repairMojibake(d.comment),
     status: mapSubStatus(d.status),
     submittedAt: d.submitted_at,
     reviewedAt: d.reviewed_at ?? undefined,
     grade: num(d.grade),
-    finalComment: d.final_comment ?? undefined,
+    finalComment: d.final_comment ? repairMojibake(d.final_comment) : undefined,
     classificationStatus: d.classification_status,
     riskLevel: d.risk_level ?? undefined,
     classifiedAt: d.classified_at ?? undefined,
@@ -208,6 +220,7 @@ export const platformService = {
 
   async createSubmission(
     studentId: string,
+    researchType: StudentSubmission['researchType'],
     title: string,
     comment: string,
     documents: Array<{
@@ -218,7 +231,7 @@ export const platformService = {
     }>,
   ): Promise<StudentSubmission> {
     const data = await apiSend<SubmissionDTO>('POST', '/api/submissions', {
-      studentId, title, comment, documents,
+      studentId, researchType, title, comment, documents,
     });
     return mapSubmission(data);
   },

@@ -71,6 +71,7 @@ model Submission {
   studentId             String                     @map("student_id") @db.Uuid
   student               User                       @relation(fields: [studentId], references: [id], onDelete: Cascade)
   researchCode          String                     @unique @map("research_code") @db.VarChar(11)
+  researchType          String                     @default("scientific") @map("research_type") @db.VarChar(30)
   title                 String                     @db.Text
   documentName          String                     @map("document_name") @db.VarChar(255)
   documentPath          String?                    @map("document_path") @db.Text
@@ -91,6 +92,7 @@ model Submission {
 
   @@index([studentId], map: "idx_submissions_student")
   @@index([status], map: "idx_submissions_status")
+  @@index([researchType], map: "idx_submissions_research_type")
   @@map("submissions")
 }
 

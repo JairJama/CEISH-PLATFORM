@@ -1,15 +1,18 @@
 import { useRef, useState } from 'react';
 import { MAX_MB, validateResearchDocument } from '../../../services/storage';
+import type { ResearchType } from '../../../shared/types/platform.types';
+import { getResearchType } from '../researchTypes';
 
 interface Props {
   onConfirm: (files: File[], title: string, comment: string) => void;
   onCancel: () => void;
+  researchType?: ResearchType;
   initialTitle?: string;
   initialComment?: string;
   mode?: 'create' | 'edit';
 }
 
-const MAX_FILES = 10;
+const REQUIRED_FILES = 4;
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -27,6 +30,7 @@ export function UploadModal({
   initialTitle = '',
   initialComment = '',
   mode = 'create',
+  researchType,
 }: Props) {
   const [files, setFiles] = useState<File[]>([]);
   const [title, setTitle] = useState(initialTitle);
@@ -37,8 +41,8 @@ export function UploadModal({
   const selectFiles = (selected: File[]) => {
     const combined = [...files, ...selected]
       .filter((file, index, all) => all.findIndex((candidate) => fileKey(candidate) === fileKey(file)) === index);
-    if (combined.length > MAX_FILES) {
-      setError(`Puedes adjuntar hasta ${MAX_FILES} documentos.`);
+    if (combined.length > REQUIRED_FILES) {
+      setError(`Debes adjuntar los ${REQUIRED_FILES} anexos requeridos.`);
       return;
     }
     const invalid = combined.find((file) => validateResearchDocument(file));
@@ -64,7 +68,8 @@ export function UploadModal({
     setFiles((current) => current.filter((file) => fileKey(file) !== key));
   };
 
-  const canConfirm = files.length > 0 && title.trim().length > 0;
+  const selectedType = researchType ? getResearchType(researchType) : null;
+  const canConfirm = files.length === REQUIRED_FILES && title.trim().length > 0;
 
   return (
     <div className="modal-backdrop" onClick={(event) => { if (event.target === event.currentTarget) onCancel(); }}>
@@ -93,6 +98,17 @@ export function UploadModal({
             />
           </div>
 
+          {selectedType && (
+            <div className="research-upload-summary">
+              <span>Tipo seleccionado</span>
+              <strong>{selectedType.name}</strong>
+              <p>Adjunta los cuatro anexos requeridos. Por ahora no se valida qué archivo corresponde a cada anexo.</p>
+              <ol>
+                {selectedType.annexes.map((annex) => <li key={annex.number}>Anexo {annex.number}: {annex.name}</li>)}
+              </ol>
+            </div>
+          )}
+
           <button
             className={`upload-zone upload-zone--multiple ${files.length ? 'upload-zone--has-file' : ''}`}
             onDrop={handleDrop}
@@ -107,7 +123,7 @@ export function UploadModal({
               </svg>
               <p className="upload-zone__empty-title">Adjunta uno o varios documentos Word o PDF</p>
               <p className="upload-zone__empty-desc">
-                .DOC, .DOCX o .PDF · hasta {MAX_FILES} archivos · máx. {MAX_MB} MB cada uno
+                .DOC, .DOCX o .PDF · {REQUIRED_FILES} anexos · máx. {MAX_MB} MB cada uno
               </p>
             </div>
           </button>
@@ -136,6 +152,7 @@ export function UploadModal({
               ))}
             </ul>
           )}
+          <p className="upload-file-count" aria-live="polite">{files.length} de {REQUIRED_FILES} anexos seleccionados</p>
 
           <div className="modal__field">
             <label className="modal__label" htmlFor="research-comment">Comentario (opcional)</label>
