@@ -150,6 +150,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
           isLoading={isLoading}
           disabled={isLoading}
           className="login-form__submit"
+          style={{
+            backgroundImage: 'linear-gradient(135deg, #ef4945, #d92f2c)',
+            boxShadow: '0 10px 22px rgba(224, 52, 50, 0.2)',
+            borderRadius: '7px',
+          }}
         >
           {isLoading ? 'Verificando…' : 'Iniciar sesión'}
         </Button>
@@ -173,43 +178,17 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
         />
       </div>
 
-      {/* Links */}
-      <div className="login-form__links">
-        <Link
-          to="/registro"
-          className="login-form__link"
-          style={{ color: colors.primary[500], border: `1px solid ${colors.border}` }}
+      {/* Registro */}
+      <div className="login-form__register">
+        <p
+          className="login-form__register-hint"
+          style={{ color: colors.gray[500], fontSize: typography.fontSize.xs }}
         >
+          ¿Aún no tienes acceso a la plataforma?
+        </p>
+        <Link to="/registro" className="login-form__register-link">
           Solicitar registro
         </Link>
-        <a
-          href="#forgot"
-          className="login-form__link"
-          style={{ color: colors.primary[500], border: `1px solid ${colors.border}` }}
-        >
-          Recuperar acceso
-        </a>
-      </div>
-
-      {/* Footer */}
-      <div
-        className="login-form__footer"
-        style={{
-          borderTop: `1px solid ${colors.border}`,
-          color: colors.gray[500],
-          fontSize: typography.fontSize.xs,
-        }}
-      >
-        <p>
-          ¿Problemas para acceder?{' '}
-          <a
-            href="#"
-            className="login-form__footer-link"
-            style={{ color: colors.primary[500] }}
-          >
-            Contacta soporte
-          </a>
-        </p>
       </div>
     </Card>
   );

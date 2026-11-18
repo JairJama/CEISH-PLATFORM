@@ -8,8 +8,7 @@ import {
 import { randomInt } from "node:crypto";
 import { PrismaService } from "../../common/prisma/prisma.service";
 
-const RESEARCH_TYPES = ["scientific", "clinical", "social"] as const;
-const REQUIRED_DOCUMENTS = 4;
+const RESEARCH_TYPES = ["general", "scientific", "clinical", "social"] as const;
 type ResearchType = (typeof RESEARCH_TYPES)[number];
 
 export interface CreateSubmissionDto {
@@ -163,9 +162,9 @@ export class SubmissionsService {
     if (!RESEARCH_TYPES.includes(input.researchType)) {
       throw new BadRequestException("El tipo de investigación no es válido");
     }
-    if (input.documents.length !== REQUIRED_DOCUMENTS) {
+    if (input.documents.length === 0) {
       throw new BadRequestException(
-        `Debes adjuntar exactamente ${REQUIRED_DOCUMENTS} anexos para crear la investigación`,
+        "Debes adjuntar al menos un documento para crear la investigación",
       );
     }
     const primaryDocument = input.documents[0];
@@ -311,9 +310,9 @@ export class SubmissionsService {
         "No se puede modificar una entrega cuya estratificación ya comenzó",
       );
     }
-    if (dto.documents && dto.documents.length !== REQUIRED_DOCUMENTS) {
+    if (dto.documents && dto.documents.length === 0) {
       throw new BadRequestException(
-        `Debes adjuntar exactamente ${REQUIRED_DOCUMENTS} anexos al reemplazar la documentación`,
+        "Debes adjuntar al menos un documento al reemplazar la documentación",
       );
     }
 

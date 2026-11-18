@@ -74,7 +74,7 @@ export function SubmissionCard({ submission, onView, onEdit, onDelete, onSubmitC
         </div>
         <div className="submission-card__info">
           <span className="submission-card__code">{submission.researchCode}</span>
-          <span className="submission-card__type">{getResearchType(submission.researchType).name}</span>
+          <span className="submission-card__type">{getResearchType().name}</span>
           <p className="submission-card__filename">{submission.title}</p>
           <p className="submission-card__date">Enviado el {formatDateTime(submission.submittedAt)}</p>
         </div>

@@ -20,7 +20,7 @@ function RootRedirect() {
   const isRestored = useAuthStore((s) => s.isRestored);
   if (!isRestored) return null;
   if (!currentUser) return <Navigate to="/login" replace />;
-  if (currentUser.role === 'student') return <Navigate to="/estudiante" replace />;
+  if (currentUser.role === 'student') return <Navigate to="/investigador" replace />;
   if (currentUser.role === 'evaluator') return <Navigate to="/evaluador/estratificacion" replace />;
   return <Navigate to="/admin" replace />;
 }
@@ -49,7 +49,7 @@ export function AppRouter() {
 
         {/* Dashboard routes wrapped in AppShell */}
         <Route element={<AppShell />}>
-          <Route path="/estudiante" element={<RequireRole role="student"><SubmissionPage /></RequireRole>} />
+          <Route path="/investigador" element={<RequireRole role="student"><SubmissionPage /></RequireRole>} />
           <Route path="/evaluador" element={<RequireRole role="evaluator"><EvaluatorDashboard /></RequireRole>} />
           <Route path="/evaluador/estratificacion" element={<RequireRole role="evaluator"><StratificationDashboard /></RequireRole>} />
           <Route path="/evaluador/calificacion" element={<RequireRole role="evaluator"><QualificationDashboard /></RequireRole>} />
@@ -60,6 +60,7 @@ export function AppRouter() {
         </Route>
 
         {/* Root redirect */}
+        <Route path="/estudiante" element={<Navigate to="/investigador" replace />} />
         <Route path="/" element={<RootRedirect />} />
       </Routes>
     </BrowserRouter>

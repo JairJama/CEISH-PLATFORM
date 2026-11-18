@@ -67,8 +67,8 @@ CREATE TABLE submissions (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   research_code VARCHAR(11) NOT NULL UNIQUE,
-  research_type VARCHAR(30) NOT NULL DEFAULT 'scientific'
-                  CHECK (research_type IN ('scientific', 'clinical', 'social')),
+  research_type VARCHAR(30) NOT NULL DEFAULT 'general'
+                  CHECK (research_type IN ('general', 'scientific', 'clinical', 'social')),
   title         TEXT NOT NULL,
   document_name VARCHAR(255) NOT NULL,           -- nombre original del archivo
   document_path TEXT,                            -- clave del objeto en MinIO (bucket "documents")

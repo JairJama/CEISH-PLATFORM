@@ -10,7 +10,7 @@ export interface User {
 }
 
 export type SubmissionStatus = 'pending' | 'under-review' | 'reviewed';
-export type ResearchType = 'scientific' | 'clinical' | 'social';
+export type ResearchType = 'general';
 export type ClassificationStatus =
   | 'awaiting-assignment'
   | 'awaiting-first'

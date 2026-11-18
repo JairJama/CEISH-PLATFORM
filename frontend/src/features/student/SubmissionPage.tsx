@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { submissionsService } from '../../services/submissions';
-import type { ResearchType, StudentSubmission } from '../../shared/types/platform.types';
+import type { StudentSubmission } from '../../shared/types/platform.types';
 import { SubmissionCard } from './components/SubmissionCard';
 import { UploadModal } from './components/UploadModal';
 import { CorrectionUploadModal } from './components/CorrectionUploadModal';
 import { workflowService } from '../../services/workflowService';
-import { RESEARCH_TYPES, type ResearchTypeOption } from './researchTypes';
 import './student.css';
 
 type ModalMode = 'create' | 'edit' | null;
@@ -20,8 +19,6 @@ export function SubmissionPage() {
   const [editingSubmission, setEditingSubmission] = useState<StudentSubmission | null>(null);
   const [correctionSubmission, setCorrectionSubmission] = useState<StudentSubmission | null>(null);
   const [activeTab, setActiveTab] = useState<ResearchTab>('create');
-  const [selectedResearchType, setSelectedResearchType] = useState<ResearchType | null>(null);
-  const [createdType, setCreatedType] = useState<ResearchTypeOption | null>(null);
 
   const reloadSubmissions = async () => {
     setSubmissions(await submissionsService.getAllForStudent());
@@ -36,10 +33,9 @@ export function SubmissionPage() {
 
   const handleConfirm = async (files: File[], title: string, comment: string) => {
     try {
-      if (modalMode === 'create' && selectedResearchType) {
-        const sub = await submissionsService.createWithDocuments(currentUser.id, selectedResearchType, title, files, comment);
+      if (modalMode === 'create') {
+        const sub = await submissionsService.createWithDocuments(currentUser.id, 'general', title, files, comment);
         setSubmissions((current) => [sub, ...current]);
-        setCreatedType(RESEARCH_TYPES.find((type) => type.id === selectedResearchType) ?? null);
         setActiveTab('active');
       } else if (modalMode === 'edit' && editingSubmission) {
         const sub = await submissionsService.updateWithDocuments(editingSubmission.id, title, files, comment);
@@ -47,17 +43,9 @@ export function SubmissionPage() {
       }
       setModalMode(null);
       setEditingSubmission(null);
-      setSelectedResearchType(null);
     } catch (e) {
       window.alert(`No se pudo enviar la investigación: ${(e as Error).message}`);
     }
-  };
-
-  const startCreation = (researchType: ResearchType) => {
-    setCreatedType(null);
-    setEditingSubmission(null);
-    setSelectedResearchType(researchType);
-    setModalMode('create');
   };
 
   const handleView = async (documentId: string) => {
@@ -108,20 +96,15 @@ export function SubmissionPage() {
         {activeTab === 'create' ? (
           <section className="research-type-picker" aria-labelledby="research-type-heading">
             <div className="research-type-picker__intro">
-              <h2 id="research-type-heading">Elige el tipo de investigación</h2>
-              <p>Cada tipo requiere cuatro anexos. Selecciona una opción para cargar tu documentación.</p>
+              <h2 id="research-type-heading">Sube tu investigación</h2>
+              <p>Adjunta todos los documentos que necesites. No hay límite de archivos ni tipos predefinidos.</p>
             </div>
-            <div className="research-type-picker__cards">
-              {RESEARCH_TYPES.map((researchType) => (
-                <article className="research-type-card" key={researchType.id}>
-                  <h3>{researchType.name}</h3>
-                  <p>{researchType.description}</p>
-                  <ul>
-                    {researchType.annexes.map((annex) => <li key={annex.number}><strong>Anexo {annex.number}</strong><span>{annex.name}</span></li>)}
-                  </ul>
-                  <button className="eval-btn eval-btn--primary" onClick={() => startCreation(researchType.id)} type="button">Seleccionar y subir anexos</button>
-                </article>
-              ))}
+            <div className="research-type-picker__cards research-type-picker__cards--single">
+              <article className="research-type-card">
+                <h3>Investigación general</h3>
+                <p>Sube el protocolo y todos los documentos Word o PDF que formen parte de tu investigación.</p>
+                <button className="eval-btn eval-btn--primary" onClick={() => { setEditingSubmission(null); setModalMode('create'); }} type="button">Subir investigación</button>
+              </article>
             </div>
           </section>
         ) : loading ? (
@@ -131,7 +114,6 @@ export function SubmissionPage() {
           </div>
         ) : submissions.length > 0 ? (
           <>
-            {createdType && <div className="research-created-notice" role="status">Se ha creado una investigación de tipo <strong>{createdType.name}</strong>.</div>}
           <div className="student-submissions-list">
             {submissions.map((submission) => (
               <SubmissionCard
@@ -156,7 +138,7 @@ export function SubmissionPage() {
             </div>
             <h2 className="empty-state__title">Aún no has enviado investigaciones</h2>
             <p className="empty-state__desc">
-              Crea una investigación y adjunta sus cuatro anexos para que un miembro del CEISH la revise y estratifique.
+              Sube tu investigación con todos los documentos que necesites para que un miembro del CEISH la revise y estratifique.
             </p>
             <button className="eval-btn eval-btn--primary" onClick={() => setActiveTab('create')}>
               Crear investigación
@@ -168,11 +150,10 @@ export function SubmissionPage() {
       {modalMode && (
         <UploadModal
           mode={modalMode}
-          researchType={modalMode === 'create' ? selectedResearchType ?? undefined : undefined}
           initialTitle={editingSubmission?.title}
           initialComment={editingSubmission?.comment}
           onConfirm={handleConfirm}
-          onCancel={() => { setModalMode(null); setSelectedResearchType(null); }}
+          onCancel={() => setModalMode(null)}
         />
       )}
       {correctionSubmission && (

@@ -20,7 +20,7 @@ import { CurrentUser, Roles } from "../../common/decorators";
 import type { SessionUser } from "../../common/auth/session.util";
 
 class CreateSubmissionBodyDto {
-  researchType!: "scientific" | "clinical" | "social";
+  researchType!: "general" | "scientific" | "clinical" | "social";
   title!: string;
   comment?: string;
   documents!: Array<{
@@ -70,9 +70,14 @@ export class SubmissionsController {
     @CurrentUser() user: SessionUser,
     @Body() body: CreateSubmissionBodyDto,
   ) {
-    if (!body.researchType || !body.title || !body.documents || !body.documents.length) {
+    if (
+      !body.researchType ||
+      !body.title ||
+      !body.documents ||
+      !body.documents.length
+    ) {
       throw new BadRequestException(
-        "El tipo, título y anexos de la investigación son requeridos",
+        "El tipo, título y documentos de la investigación son requeridos",
       );
     }
     return this.submissionsService.createSubmission({
