@@ -1,5 +1,5 @@
 import type {
-  EvaluationSession,
+  EvaluationMatrix,
   EvaluationStats,
   CriterionStatus,
   Criterion,
@@ -7,7 +7,7 @@ import type {
 import { CriterionItem } from './CriterionItem';
 
 interface Props {
-  session: EvaluationSession;
+  matrix: EvaluationMatrix;
   stats: EvaluationStats;
   activeCriterionId: string | null;
   currentPdfPage: number;
@@ -28,7 +28,7 @@ function groupByCategory(criteria: Criterion[]): [string, Criterion[]][] {
 }
 
 export function CriteriaPanel({
-  session,
+  matrix,
   stats,
   activeCriterionId,
   currentPdfPage,
@@ -37,14 +37,14 @@ export function CriteriaPanel({
   onObservationChange,
   onPageRefChange,
 }: Props) {
-  const { criteria } = session.matrix;
+  const { criteria } = matrix;
   const groups = groupByCategory(criteria);
 
   return (
     <aside className="criteria-panel">
       <div className="criteria-panel__header">
-        <h2 className="criteria-panel__title">{session.matrix.name}</h2>
-        <p className="criteria-panel__version">Versión {session.matrix.version}</p>
+        <h2 className="criteria-panel__title">{matrix.name}</h2>
+        <p className="criteria-panel__version">Versión {matrix.version}</p>
       </div>
 
       <div className="criteria-panel__stats">

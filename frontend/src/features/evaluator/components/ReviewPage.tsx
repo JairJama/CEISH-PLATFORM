@@ -9,8 +9,6 @@ import { StageNav } from './StageNav';
 import { platformService } from '../../../shared/services/platformService';
 import { storageService } from '../../../services/storage';
 import type { StudentSubmission } from '../../../shared/types/platform.types';
-import type { EvaluationSession } from '../../../features/evaluation/types/evaluation.types';
-import { useAuthStore } from '../../../store/authStore';
 import { useReviewStore } from '../../../store/reviewStore';
 import '../../../features/evaluation/evaluation.css';
 import '../evaluator.css';
@@ -78,7 +76,6 @@ function FinalizeModal({ onConfirm, onCancel }: FinalizeModalProps) {
 export function ReviewPage() {
   const { submissionId = '' } = useParams<{ submissionId: string }>();
   const navigate = useNavigate();
-  const currentUser = useAuthStore((s) => s.currentUser);
   const [submission, setSubmission] = useState<StudentSubmission | null>(null);
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [activeCriterionId, setActiveCriterionId] = useState<string | null>(null);
@@ -121,22 +118,6 @@ export function ReviewPage() {
       </div>
     );
   }
-
-  // Build a fake EvaluationSession to reuse CriteriaPanel unchanged
-  const stageAsSession: EvaluationSession = {
-    id: review.id,
-    documentName: submission?.documentName ?? 'Documento',
-    evaluator: currentUser?.name ?? '',
-    matrix: {
-      id: currentStage.id,
-      name: currentStage.name,
-      version: '1.0',
-      criteria: currentStage.criteria,
-    },
-    status: 'in-progress',
-    createdAt: review.id,
-    updatedAt: new Date().toISOString(),
-  };
 
   return (
     <div className="eval-layout">
@@ -214,7 +195,12 @@ export function ReviewPage() {
           )}
         </main>
         <CriteriaPanel
-          session={stageAsSession}
+          matrix={{
+            id: currentStage.id,
+            name: currentStage.name,
+            version: '1.0',
+            criteria: currentStage.criteria,
+          }}
           stats={stageStats}
           activeCriterionId={activeCriterionId}
           currentPdfPage={pdf.currentPage}
