@@ -8,16 +8,14 @@ interface Props {
 
 export function DocxViewer({ url }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [loadState, setLoadState] = useState(() => ({ url, loading: true, error: false }));
+  const { loading, error } = loadState.url === url ? loadState : { loading: true, error: false };
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setError(false);
 
     if (containerRef.current) {
-        containerRef.current.innerHTML = '';
+      containerRef.current.innerHTML = '';
     }
 
     const loadDoc = async () => {
@@ -37,13 +35,12 @@ export function DocxViewer({ url }: Props) {
             ignoreLastRenderedPageBreak: true,
             experimental: true,
           });
-          if (active) setLoading(false);
+          if (active) setLoadState({ url, loading: false, error: false });
         }
       } catch (err) {
         console.error('Error rendering docx:', err);
         if (active) {
-            setLoading(false);
-            setError(true);
+          setLoadState({ url, loading: false, error: true });
         }
       }
     };
