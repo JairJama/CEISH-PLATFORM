@@ -6,16 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "db:migrate": "node --env-file=../.env ../scripts/migrate.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
-    "busboy": "^1.6.0",
     "docx-preview": "^0.4.1",
     "jszip": "^3.10.2",
-    "minio": "^8.0.7",
-    "pg": "^8.21.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-pdf": "^10.4.1",
@@ -24,9 +20,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/busboy": "^1.5.4",
     "@types/node": "^24.12.3",
-    "@types/pg": "^8.20.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
