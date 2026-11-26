@@ -10,8 +10,7 @@ import { platformService } from '../../../shared/services/platformService';
 import { storageService } from '../../../services/storage';
 import type { StudentSubmission } from '../../../shared/types/platform.types';
 import { useReviewStore } from '../../../store/reviewStore';
-import '../../../features/evaluation/evaluation.css';
-import '../evaluator.css';
+import { btnClass, modalLayout, spinnerClass } from '../../../shared/components/common/ui';
 
 interface FinalizeModalProps {
   onConfirm: (comment: string, grade: number) => void;
@@ -23,22 +22,22 @@ function FinalizeModal({ onConfirm, onCancel }: FinalizeModalProps) {
   const [grade, setGrade] = useState('');
 
   return (
-    <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
-      <div className="modal">
-        <div className="modal__header">
-          <h2 className="modal__title">Finalizar revisión</h2>
-          <button className="modal__close" onClick={onCancel}>
+    <div className={modalLayout.backdrop} onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
+      <div className={modalLayout.panel}>
+        <div className={modalLayout.header}>
+          <h2 className={modalLayout.title}>Finalizar revisión</h2>
+          <button className={modalLayout.close} onClick={onCancel} type="button" aria-label="Cerrar">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
         </div>
-        <div className="modal__body">
-          <div className="modal__field">
-            <label className="modal__label">Calificación (0 – 10)</label>
+        <div className={modalLayout.body}>
+          <div className={modalLayout.field}>
+            <label className={modalLayout.label}>Calificación (0 – 10)</label>
             <input
               type="number"
-              className="modal__input"
+              className={modalLayout.input}
               placeholder="Ej: 8.5"
               min={0}
               max={10}
@@ -47,10 +46,10 @@ function FinalizeModal({ onConfirm, onCancel }: FinalizeModalProps) {
               onChange={(e) => setGrade(e.target.value)}
             />
           </div>
-          <div className="modal__field">
-            <label className="modal__label">Comentario final para el estudiante</label>
+          <div className={modalLayout.field}>
+            <label className={modalLayout.label}>Comentario final para el estudiante</label>
             <textarea
-              className="modal__textarea"
+              className={modalLayout.textarea}
               placeholder="Ej: El documento cumple con los criterios establecidos..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -58,12 +57,13 @@ function FinalizeModal({ onConfirm, onCancel }: FinalizeModalProps) {
             />
           </div>
         </div>
-        <div className="modal__footer">
-          <button className="eval-btn eval-btn--outline" onClick={onCancel}>Cancelar</button>
+        <div className={modalLayout.footer}>
+          <button className={btnClass('outline')} onClick={onCancel} type="button">Cancelar</button>
           <button
-            className="eval-btn eval-btn--primary"
+            className={btnClass('primary')}
             disabled={!comment.trim() || grade === ''}
             onClick={() => onConfirm(comment, parseFloat(grade))}
+            type="button"
           >
             Confirmar y finalizar
           </button>
@@ -101,64 +101,69 @@ export function ReviewPage() {
     platformService.getAllSubmissions().then((subs) => {
       setSubmission(subs.find((s) => s.id === submissionId) ?? null);
     });
-    // Clear previous review on unmount
     return () => { useReviewStore.getState().setReview(null); };
   }, [submissionId]);
 
-  // Cargar automáticamente el documento subido por el estudiante (desde MinIO)
   useEffect(() => {
     if (submissionId) loadFile(storageService.getRawUrl(submissionId));
   }, [submissionId, loadFile]);
 
   if (!review || !currentStage || !stageStats) {
     return (
-      <div className="eval-loading">
-        <div className="pdf-spinner" />
+      <div className="flex flex-col items-center justify-center h-[100dvh] gap-3 bg-slate-50 text-slate-500 text-[14px]">
+        <div className={spinnerClass} />
         <span>Cargando revisión...</span>
       </div>
     );
   }
 
   return (
-    <div className="eval-layout">
-      {/* ── Review header ── */}
-      <header className="eval-header review-header">
-        <div className="eval-header__left">
-          <button className="review-header__back" onClick={() => navigate(-1)} title="Volver">
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-slate-50 text-slate-900">
+      <header className="flex items-center gap-3 sm:gap-4 px-3 sm:px-5 h-14 bg-white border-b border-slate-200 shrink-0 z-10">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <button
+            className="flex items-center justify-center w-[30px] h-[30px] rounded-md text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 transition-colors shrink-0"
+            onClick={() => navigate(-1)}
+            title="Volver"
+            aria-label="Volver"
+            type="button"
+          >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          <div className="eval-header__divider" />
-          <div className="eval-header__doc-info">
-            <p className="eval-header__doc-name">{submission?.documentName ?? 'Documento'}</p>
-            <div className="eval-header__meta">
-              <span className="eval-header__evaluator">
-                {submission ? (
-                  <>Revisando a: {review.studentId}</>
-                ) : 'Cargando...'}
+          <div className="w-px h-[22px] bg-slate-200 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-slate-900 truncate leading-snug">
+              {submission?.documentName ?? 'Documento'}
+            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[11px] text-slate-500 truncate">
+                {submission ? <>Revisando a: {review.studentId}</> : 'Cargando...'}
               </span>
               {isComplete && (
-                <span className="eval-header__status eval-header__status--completed">Completado</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-[0.04em] bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Completado
+                </span>
               )}
             </div>
           </div>
         </div>
 
-        <div className="review-header__stages">
+        <div className="hidden md:flex flex-1 justify-center overflow-x-auto">
           <StageNav stages={review.stages} currentIndex={review.currentStageIndex} />
         </div>
 
-        <div className="eval-header__right">
+        <div className="flex items-center gap-2 shrink-0">
           {!isComplete && (
             <>
-              <button className="eval-btn eval-btn--ghost" onClick={handleSave}>Guardar</button>
+              <button className={btnClass('outline')} onClick={handleSave} type="button">Guardar</button>
               {isLastStage ? (
-                <button className="eval-btn eval-btn--primary" onClick={() => setShowFinalizeModal(true)}>
+                <button className={btnClass('primary')} onClick={() => setShowFinalizeModal(true)} type="button">
                   Finalizar entrega
                 </button>
               ) : (
-                <button className="eval-btn eval-btn--primary" onClick={handleAdvance}>
+                <button className={btnClass('primary')} onClick={handleAdvance} type="button">
                   Siguiente etapa
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path d="M5 3l4 3.5L5 10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
@@ -170,9 +175,8 @@ export function ReviewPage() {
         </div>
       </header>
 
-      {/* ── Two-panel body (reuses existing components) ── */}
-      <div className="eval-body">
-        <main className="eval-pdf-panel">
+      <div className="flex flex-1 flex-col lg:flex-row overflow-hidden min-h-0">
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {submission && !submission.documentName.toLowerCase().endsWith('.pdf') ? (
             <DocxViewer url={storageService.getRawUrl(submissionId)} />
           ) : (

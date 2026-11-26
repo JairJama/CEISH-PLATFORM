@@ -1,9 +1,6 @@
-// src/features/auth/components/LoginForm.tsx
+// src/features/auth/LoginForm.tsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './LoginForm.css';
-
-import { colors, typography } from '../../shared/components/common/colors';
 import type { LoginResult } from '../../services/authService';
 import Input from '../../shared/components/common/Input';
 import Button from '../../shared/components/common/Button';
@@ -62,54 +59,38 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
 
   return (
     <Card variant="elevated" padding="md">
-      {/* Header */}
-      <div className="login-form__header">
-        <h1
-          className="login-form__title"
-          style={{
-            color: colors.surface.dark,
-            fontFamily: typography.fontFamily.display,
-          }}
-        >
+      <div className="mb-5">
+        <h1 className="text-slate-900 text-[26px] font-semibold tracking-[-0.03em]">
           Acceso a Plataforma
         </h1>
-        <p
-          className="login-form__subtitle"
-          style={{
-            color: colors.gray[600],
-            fontSize: typography.fontSize.sm,
-            fontFamily: typography.fontFamily.body,
-          }}
-        >
+        <p className="mt-1 text-slate-600 text-[13px]">
           Inicia sesión con tu correo institucional
         </p>
       </div>
 
-      {/* Línea decorativa */}
-      <div
-        className="login-form__divider-top"
-        style={{
-          background: `linear-gradient(90deg, ${colors.primary[500]} 0%, ${colors.success[500]} 100%)`,
-        }}
-      />
+      <div className="h-0.5 mb-5 bg-gradient-to-r from-[#ef3e3a] to-transparent" />
 
-      {/* Mensajes de estado */}
       {generalError && (
-        <div className="login-form__alert login-form__alert--error">
-          <span className="login-form__alert-icon">⚠️</span>
-          <p className="login-form__alert-text">{generalError}</p>
+        <div
+          className="flex items-start gap-2.5 mb-4 px-3.5 py-2.5 rounded-[7px] border border-red-200 bg-red-50 text-[#b91c1c] text-[13px]"
+          role="alert"
+        >
+          <span aria-hidden="true">⚠️</span>
+          <p>{generalError}</p>
         </div>
       )}
 
       {successMessage && (
-        <div className="login-form__alert login-form__alert--success">
-          <span className="login-form__alert-icon">✓</span>
-          <p className="login-form__alert-text">{successMessage}</p>
+        <div
+          className="flex items-start gap-2.5 mb-4 px-3.5 py-2.5 rounded-[7px] border border-emerald-200 bg-emerald-50 text-emerald-800 text-[13px]"
+          role="status"
+        >
+          <span aria-hidden="true">✓</span>
+          <p>{successMessage}</p>
         </div>
       )}
 
-      {/* Formulario */}
-      <form onSubmit={handleSubmit} className="login-form__form" noValidate>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-5" noValidate>
         <Input
           label="Correo institucional"
           type="email"
@@ -149,44 +130,26 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
           fullWidth
           isLoading={isLoading}
           disabled={isLoading}
-          className="login-form__submit"
-          style={{
-            backgroundImage: 'linear-gradient(135deg, #ef4945, #d92f2c)',
-            boxShadow: '0 10px 22px rgba(224, 52, 50, 0.2)',
-            borderRadius: '7px',
-          }}
+          className="mt-1 rounded-[7px]"
         >
           {isLoading ? 'Verificando…' : 'Iniciar sesión'}
         </Button>
       </form>
 
-      {/* Divider */}
-      <div className="login-form__divider">
-        <div
-          className="login-form__divider-line"
-          style={{ backgroundColor: colors.border }}
-        />
-        <span
-          className="login-form__divider-text"
-          style={{ color: colors.gray[500], fontSize: typography.fontSize.xs }}
-        >
-          O
-        </span>
-        <div
-          className="login-form__divider-line"
-          style={{ backgroundColor: colors.border }}
-        />
+      <div className="flex items-center gap-3 mb-5">
+        <div className="h-px flex-1 bg-slate-200" />
+        <span className="text-slate-400 text-xs font-medium">O</span>
+        <div className="h-px flex-1 bg-slate-200" />
       </div>
 
-      {/* Registro */}
-      <div className="login-form__register">
-        <p
-          className="login-form__register-hint"
-          style={{ color: colors.gray[500], fontSize: typography.fontSize.xs }}
-        >
+      <div className="grid gap-2.5">
+        <p className="m-0 text-slate-500 text-xs text-center">
           ¿Aún no tienes acceso a la plataforma?
         </p>
-        <Link to="/registro" className="login-form__register-link">
+        <Link
+          to="/registro"
+          className="flex items-center justify-center px-3.5 py-3 border border-[#ef3e3a] rounded-[7px] bg-red-50/70 text-[#d92f2c] text-xs font-semibold tracking-[0.02em] no-underline transition-colors hover:bg-red-100 hover:border-[#d92f2c] hover:text-[#b91c1c]"
+        >
           Solicitar registro
         </Link>
       </div>

@@ -26,28 +26,37 @@ const STAGE_ICON = {
   ),
 };
 
+const ICON_COLOR: Record<ReviewStage['status'], string> = {
+  completed: 'text-emerald-600',
+  'in-progress': 'text-[#ef3e3a]',
+  pending: 'text-slate-400',
+};
+
 export function StageNav({ stages, currentIndex }: Props) {
   return (
-    <div className="stage-nav">
+    <div className="flex items-center gap-0">
       {stages.map((stage, i) => (
-        <div key={stage.id} className="stage-nav__item-wrap">
+        <div key={stage.id} className="flex items-center">
           <div
             className={cn(
-              'stage-nav__item',
-              `stage-nav__item--${stage.status}`,
-              i === currentIndex && 'stage-nav__item--current'
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] transition-opacity',
+              i === currentIndex
+                ? 'opacity-100 bg-red-50 border border-red-200'
+                : stage.status === 'completed'
+                  ? 'opacity-85'
+                  : 'opacity-60',
             )}
           >
-            <span className={`stage-nav__icon stage-nav__icon--${stage.status}`}>
-              {STAGE_ICON[stage.status]}
-            </span>
-            <span className="stage-nav__label">
-              <span className="stage-nav__order">Etapa {i + 1}</span>
-              <span className="stage-nav__name">{stage.name}</span>
+            <span className={ICON_COLOR[stage.status]}>{STAGE_ICON[stage.status]}</span>
+            <span className="flex flex-col leading-tight">
+              <span className="text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-400">
+                Etapa {i + 1}
+              </span>
+              <span className="text-[12px] font-medium text-slate-800 whitespace-nowrap">{stage.name}</span>
             </span>
           </div>
           {i < stages.length - 1 && (
-            <div className={cn('stage-nav__connector', stage.status === 'completed' && 'stage-nav__connector--done')} />
+            <div className={cn('w-6 h-px mx-0.5', stage.status === 'completed' ? 'bg-emerald-500' : 'bg-slate-200')} />
           )}
         </div>
       ))}
