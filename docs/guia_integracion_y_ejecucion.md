@@ -1,5 +1,7 @@
 # Guía de integración y ejecución
 
+> Propósito: contrato `/api`, entorno local y comprobaciones antes de entregar.
+
 La estructura y los límites entre `frontend/`, `backend/`, `database/` y Compose se explican en [arquitectura del monorepo](arquitectura.md). Para instalar y levantar la aplicación, sigue la sección **Ejecutar localmente** del [README](../README.md); esta guía resume cómo verificar la conexión.
 
 ## Contrato del frontend

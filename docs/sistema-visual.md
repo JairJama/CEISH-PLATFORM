@@ -1,14 +1,16 @@
 # Guía breve del sistema visual
 
-La interfaz prioriza lectura de expedientes, decisiones trazables y acciones claras. Las vistas de investigador, evaluador y administrador comparten los mismos tokens y patrones; el rol cambia las acciones disponibles, no el lenguaje visual.
+> Propósito: convenciones vigentes de UI y accesibilidad para cambios visuales en `frontend/`.
+
+La interfaz prioriza lectura de expedientes, decisiones trazables y acciones claras. Las vistas de investigador, evaluador y administrador comparten los mismos tokens y patrones; el rol cambia las acciones disponibles, no el lenguaje visual. El tema vigente es oscuro y se define en `frontend/src/index.css`.
 
 ## Fundamentos
 
 | Uso | Token o criterio |
 | --- | --- |
-| Acción principal / navegación activa | `--c-primary` (`#0B6B63`), hover `--c-primary-hover` |
-| Fondo de trabajo | `--c-bg` (`#F1F5F9`) |
-| Tarjeta o formulario | `--c-surface` (`#FFFFFF`); superficies suaves `--c-surface-2` |
+| Acción principal / navegación activa | `--c-primary` (`#ef3e3a`), hover `--c-primary-hover` (`#d92f2c`) |
+| Fondo de trabajo | `--c-bg` (`#0a0c0e`) |
+| Tarjeta o formulario | `--c-surface` (`#111419`); superficies suaves `--c-surface-2` (`#171b20`) |
 | Texto principal / secundario | `--c-text` / `--c-text-2` |
 | Texto auxiliar | `--c-text-muted`; no usar como texto normal de bajo contraste |
 | Éxito, alerta y error | `--c-success-*`, badges warning, `--c-danger-*` |
@@ -48,4 +50,4 @@ Cada pantalla con datos debe resolver estos estados:
 
 ## Revisión por rol
 
-Antes de cerrar un cambio visual, recorrer `/estudiante`, `/evaluador/estratificacion`, `/evaluador/calificacion`, `/evaluador/revision/:submissionId`, `/admin`, `/admin/asignaciones` y `/admin/solicitudes`. Revisar en cada flujo la carga, vacío, error y éxito que aplique; revisar también navegación por teclado y ancho móvil. Las modificaciones de estilo no deben alterar contratos de API ni lógica de negocio.
+Antes de cerrar un cambio visual, recorrer `/investigador` (`/estudiante` solo redirige), `/evaluador/estratificacion`, `/evaluador/calificacion`, `/evaluador/revision/:submissionId`, `/admin`, `/admin/solicitudes` y `/admin/investigaciones`. Revisar en cada flujo la carga, vacío, error y éxito que aplique; revisar también navegación por teclado y ancho móvil. Las modificaciones de estilo no deben alterar contratos de API ni lógica de negocio.

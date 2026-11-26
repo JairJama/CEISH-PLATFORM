@@ -30,7 +30,7 @@ backend/                     API NestJS
     ├── common/              Auth, validación, Prisma y MinIO
     └── modules/             Auth, users, submissions, reviews y CEISH
 database/                    Esquema inicial, seed y migraciones SQL incrementales
-docs/                        Arquitectura, ejecución y matrices de revisión
+docs/                        Documentación vigente: arquitectura, ejecución, flujo de anexos, sistema visual, seguridad y diagrama de BD
 ```
 
 Las migraciones aplicadas no se editan: los cambios de esquema se agregan con un nuevo archivo numerado en `database/migrations/` y se reflejan en `database/schema.sql`. NestJS usa Prisma para consultar el esquema compartido. Los contratos actuales de `/api/*` deben mantenerse durante la transición de servicios.
@@ -146,7 +146,11 @@ Las pantallas y rutas están centralizadas en `frontend/src/app/router/index.tsx
 
 ## Documentación
 
+Toda la documentación vigente para el agente está en `docs/`.
+
+- [Arquitectura del monorepo](docs/arquitectura.md)
 - [Guía de integración y ejecución](docs/guia_integracion_y_ejecucion.md)
 - [Guía del sistema visual](docs/sistema-visual.md)
 - [Matriz de autenticación y autorización](docs/matriz-seguridad-auth.md)
-- [Flujo institucional de anexos](contexto/flujo-anexos-evaluacion.md)
+- [Flujo institucional de anexos](docs/flujo-anexos-evaluacion.md)
+- [Diagrama actual de la base de datos](docs/db-diagram/ceish_database.svg)

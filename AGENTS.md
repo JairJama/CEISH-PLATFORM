@@ -12,9 +12,22 @@
 - `frontend/` = React 19 + TS + Vite + React Router + Zustand. `backend/` = NestJS (API de referencia) + Prisma + MinIO SDK.
 - Contrato: navegador → `/api/*` (cookies) → NestJS → PostgreSQL (metadatos) + MinIO (bucket `documents`). El navegador nunca toca PostgreSQL/MinIO; los componentes solo usan `frontend/src/services/`.
 - `frontend/vite.config.ts`: con `VITE_USE_NEST_BACKEND=true` hace proxy `/api` a `BACKEND_URL` (por defecto `http://localhost:3000`). Con `false` carga el plugin transitorio `frontend/src/server/apiPlugin.ts`: no agregarle capacidades.
-- `CLAUDE.md` está desactualizado (describe un backend dentro de Vite sin NestJS): ignorarlo, la fuente vigente es `README.md` + este archivo.
+- `CLAUDE.md` está desactualizado (describe un backend dentro de Vite sin NestJS): ignorarlo. La fuente vigente es `README.md`, este archivo y `docs/`.
 - Backend: Swagger en `http://localhost:3000/api/docs`. Sesión en cookie firmada `HttpOnly`/`SameSite=Lax` (`Secure` en prod); cada request protegida revalida usuario y rol.
 - Módulos NestJS en `backend/src/modules/`: `auth users submissions stratification qualification reviews annexes admin`. Esquema Prisma en `backend/prisma/schema.prisma`.
+
+## Documentación
+
+Toda la documentación de contexto está en `docs/`; no crear otras carpetas de documentación.
+
+| Archivo | Propósito |
+| --- | --- |
+| `docs/arquitectura.md` | Límites del monorepo, módulos y transición de la API Vite a NestJS |
+| `docs/guia_integracion_y_ejecucion.md` | Contrato `/api`, entorno local y comprobaciones previas |
+| `docs/matriz-seguridad-auth.md` | Casos manuales de sesión, roles y pertenencia |
+| `docs/sistema-visual.md` | Tokens, componentes y accesibilidad de la UI |
+| `docs/flujo-anexos-evaluacion.md` | Reglas de anexos, correcciones y emisiones |
+| `docs/db-diagram/ceish_database.svg` | Diagrama vigente de la base de datos |
 
 ## Comandos
 
@@ -42,7 +55,7 @@ Verificación antes de entregar: `npm run lint` + `npm run build` en cada paquet
 ## Anexos CEISH
 
 - Fuente de verdad: modelos institucionales en `/home/marcodev/Documents/ceish/ANEXOS PARA MIEMBROS/ANEXOS PARA MIEMBROS/Anexos para miembros`; no reutilizar un número de anexo para otra finalidad.
-- Leer `contexto/flujo-anexos-evaluacion.md` antes de tocar calificación, correcciones o generación documental.
+- Leer `docs/flujo-anexos-evaluacion.md` antes de tocar calificación, correcciones o generación documental.
 - Cada emisión es un registro independiente: un Anexo 12 nuevo por decisión (nunca sobrescribir); aprobación = Anexo 12 sin observaciones + Anexo 11; cierre tras correcciones = Anexo 12 + Anexo 13 y estado `cancelled`; plazo de correcciones vencido = `expired`. Anexo 26 solo para suspender/revocar aprobadas (aún no implementado).
 - Autorización por rol y pertenencia a la investigación, aplicada en servidor.
 

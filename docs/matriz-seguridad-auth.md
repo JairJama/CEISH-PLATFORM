@@ -1,5 +1,7 @@
 # Matriz reproducible de autenticación y autorización
 
+> Propósito: casos manuales para verificar sesión, roles y pertenencia a los recursos.
+
 Esta matriz cubre las rutas de acceso, el rol actual y la relación del usuario con los recursos. Ejecuta las llamadas contra el NestJS levantado con una base de prueba; usa cuentas y datos seed o registros desechables. No uses datos reales de investigación.
 
 ## Preparación

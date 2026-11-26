@@ -1,5 +1,7 @@
 # Arquitectura del monorepo
 
+> Propósito: límites entre paquetes, contrato `/api` y módulos de NestJS.
+
 ## Diagrama
 
 ```mermaid
@@ -12,19 +14,19 @@ flowchart LR
   Env -. configuración local .-> API
 ```
 
-En producción, Vite publica el frontend compilado detrás del host de la API o de un proxy inverso; ese proxy dirige `/api/*` a NestJS. En desarrollo, el servidor Vite local aplica el mismo enrutamiento desde `BACKEND_URL`. El navegador no conoce credenciales de PostgreSQL/MinIO ni se conecta directamente a esos servicios.
+En producción, Nginx sirve el frontend compilado y reenvía `/api/*` a NestJS (`frontend/nginx.conf`). En desarrollo, Vite reenvía `/api` a `BACKEND_URL` cuando `VITE_USE_NEST_BACKEND=true`. El navegador no conoce credenciales de PostgreSQL/MinIO ni se conecta directamente a esos servicios.
 
 ## Carpetas
 
 - `frontend/`: React, rutas por rol, estilos, estado y servicios HTTP. Los componentes no conocen Prisma, SQL ni MinIO.
 - `backend/`: aplicación NestJS; `modules/` separa dominios, `common/` contiene autenticación, guards e infraestructura, y Prisma mapea el esquema SQL.
 - `database/`: `schema.sql` para instalación limpia, `seed.sql` de demostración y migraciones SQL aditivas.
-- `docker-compose.yml`: PostgreSQL, MinIO, inicialización de bucket y API NestJS. El frontend Vite se ejecuta aparte durante desarrollo.
-- `docs/` y `contexto/`: contratos operativos, decisiones de arquitectura y flujos institucionales.
+- `docker-compose.yml`: PostgreSQL, MinIO, inicialización del bucket, API NestJS y frontend Nginx en el puerto `5173`. Para desarrollo interactivo, Vite se ejecuta aparte.
+- `docs/`: único lugar de documentación para el agente: contratos operativos, arquitectura, flujos institucionales, sistema visual y diagrama de la base de datos (`docs/db-diagram/`).
 
 ## Migración de rutas de Vite a NestJS
 
-La API temporal `frontend/src/server/apiPlugin.ts` organiza rutas en bloques; NestJS las separa por módulo. Esta tabla sirve para completar la transición y borrar el plugin una vez comprobado el contrato en producción.
+La API temporal `frontend/src/server/apiPlugin.ts` organiza rutas en bloques; NestJS las separa por módulo. Esta tabla documenta la transición: el plugin se conserva solo como alternativa local y no debe ampliarse.
 
 | API temporal (`frontend/src/server/queries/`) | NestJS |
 | --- | --- |

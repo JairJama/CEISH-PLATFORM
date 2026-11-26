@@ -1,5 +1,7 @@
 # Flujo de anexos durante la evaluación
 
+> Propósito: reglas institucionales de anexos, correcciones y emisiones; leer antes de cambiar calificación o generación documental.
+
 ## Fuente institucional verificada
 
 Los documentos originales se revisaron desde el directorio institucional indicado en `AGENTS.md`. Su numeración y finalidad son:
@@ -34,7 +36,7 @@ La regla funcional confirmada para esta plataforma es: el Anexo 11 se emite al a
 
 ## Cierres y documentos emitidos
 
-- Una aprobación genera dos registros independientes: el Anexo 12 sin observaciones y el Anexo 11 de aprobación.
+- Una aprobación conserva el Anexo 12 sin observaciones y convierte en definitivo el borrador del Anexo 11 de la investigación; si no hay borrador, crea el Anexo 11. La regla de emisión independiente aplica al Anexo 12, no al 11.
 - Un cierre decidido por el evaluador después de recibir correcciones genera el Anexo 12 con observaciones, el Anexo 13 de cierre y cambia el caso a `cancelled`.
 - El vencimiento del plazo de correcciones cambia el caso a `expired`.
 - El cierre o el vencimiento previo a una aprobación no generan un número de anexo inventado. Se conserva la decisión y su Anexo 12 cuando corresponda.
