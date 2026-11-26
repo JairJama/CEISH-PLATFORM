@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { EvaluationPage } from '../../features/evaluation/EvaluationPage';
 import { LoginPage } from '../../features/auth/LoginPage';
 import { RegistrationPage } from '../../features/auth/RegistrationPage';
 import { AppShell } from '../../shared/components/AppShell';
@@ -42,9 +41,7 @@ export function AppRouter() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro" element={<RegistrationPage />} />
 
-        {/* Full-screen evaluation routes (existing + review) */}
-        <Route path="/evaluacion" element={<RequireRole role="evaluator"><EvaluationPage /></RequireRole>} />
-        <Route path="/evaluacion/:id" element={<RequireRole role="evaluator"><EvaluationPage /></RequireRole>} />
+        {/* Full-screen evaluation route */}
         <Route path="/evaluador/revision/:submissionId" element={<RequireRole role="evaluator"><ReviewPage /></RequireRole>} />
 
         {/* Dashboard routes wrapped in AppShell */}
