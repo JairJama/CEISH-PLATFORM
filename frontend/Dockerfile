@@ -5,8 +5,6 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-ARG VITE_USE_NEST_BACKEND=true
-ENV VITE_USE_NEST_BACKEND=${VITE_USE_NEST_BACKEND}
 RUN npm run build
 
 FROM nginx:1.27-alpine AS runtime

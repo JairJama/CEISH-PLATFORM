@@ -88,8 +88,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        VITE_USE_NEST_BACKEND: "true"
     container_name: ceish_frontend
     restart: unless-stopped
     ports:
