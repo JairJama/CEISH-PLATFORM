@@ -14,13 +14,13 @@ flowchart LR
   Migrations[database/schema.sql\n+ migraciones SQL] --> DB
 ```
 
-El frontend conserva los contratos consumidos desde `frontend/src/services/`. En desarrollo, Vite reenvía `/api` a NestJS cuando `VITE_USE_NEST_BACKEND=true`. El antiguo plugin `frontend/src/server/apiPlugin.ts` sigue disponible como transición local, pero NestJS es la implementación de referencia y la configuración de ejemplo usa NestJS.
+El frontend conserva los contratos consumidos desde `frontend/src/services/`. En desarrollo, Vite reenvía `/api` a NestJS (`BACKEND_URL`, por defecto `http://localhost:3000`); en producción lo hace Nginx. NestJS es la única API del proyecto.
 
 ### Estructura y responsabilidades
 
 ```text
 frontend/                    Aplicación React/Vite
-├── src/                     Rutas, vistas, servicios y API Vite transitoria
+├── src/                     Rutas, vistas, servicios y estado (sin acceso a datos)
 ├── public/                  Recursos estáticos
 ├── package.json             Scripts y dependencias del frontend
 └── vite.config.ts           Proxy local hacia la API NestJS
@@ -33,7 +33,7 @@ database/                    Esquema inicial, seed y migraciones SQL incremental
 docs/                        Documentación vigente: arquitectura, ejecución, flujo de anexos, sistema visual, seguridad y diagrama de BD
 ```
 
-Las migraciones aplicadas no se editan: los cambios de esquema se agregan con un nuevo archivo numerado en `database/migrations/` y se reflejan en `database/schema.sql`. NestJS usa Prisma para consultar el esquema compartido. Los contratos actuales de `/api/*` deben mantenerse durante la transición de servicios.
+Las migraciones aplicadas no se editan: los cambios de esquema se agregan con un nuevo archivo numerado en `database/migrations/` y se reflejan en `database/schema.sql`. NestJS usa Prisma para consultar el esquema compartido. Los contratos actuales de `/api/*` se mantienen estables.
 
 ### Límites entre módulos
 
@@ -92,7 +92,7 @@ Las contraseñas se guardan con `scrypt`. La sesión se transporta en una cookie
    npm run dev
    ```
 
-   Abre `http://localhost:5173`. La configuración de ejemplo activa el proxy hacia NestJS. Si se levanta toda la infraestructura con `docker compose up -d`, el servicio `backend` también se inicia dentro de Docker.
+   Abre `http://localhost:5173`; Vite reenvía `/api` a NestJS. Si se levanta toda la infraestructura con `docker compose up -d`, el servicio `backend` también se inicia dentro de Docker.
 
    Para ejecutar todo el stack con el frontend compilado y servido por Nginx, usa `docker compose up -d --build`. El contenedor `frontend` sirve la aplicación en `http://localhost:5173` y reenvía `/api/*` al servicio `backend`; en ese modo no necesitas ejecutar Vite aparte.
 
@@ -104,8 +104,7 @@ Las variables principales están en `.env.example`; `backend/.env.example` docum
 
 | Variable | Uso |
 | --- | --- |
-| `VITE_USE_NEST_BACKEND` | Activa el proxy `/api` desde Vite a NestJS |
-| `BACKEND_URL` | Destino del proxy local, por defecto `http://localhost:3000` |
+| `BACKEND_URL` | Destino del proxy `/api` de Vite, por defecto `http://localhost:3000` |
 | `DATABASE_URL` | Conexión Prisma a PostgreSQL |
 | `SESSION_SECRET` | Firma de cookies de sesión |
 | `CORS_ORIGIN` | Origen del frontend autorizado por NestJS |

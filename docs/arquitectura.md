@@ -14,7 +14,7 @@ flowchart LR
   Env -. configuración local .-> API
 ```
 
-En producción, Nginx sirve el frontend compilado y reenvía `/api/*` a NestJS (`frontend/nginx.conf`). En desarrollo, Vite reenvía `/api` a `BACKEND_URL` cuando `VITE_USE_NEST_BACKEND=true`. El navegador no conoce credenciales de PostgreSQL/MinIO ni se conecta directamente a esos servicios.
+En producción, Nginx sirve el frontend compilado y reenvía `/api/*` a NestJS (`frontend/nginx.conf`). En desarrollo, Vite reenvía `/api` a `BACKEND_URL` (por defecto `http://localhost:3000`). El navegador no conoce credenciales de PostgreSQL/MinIO ni se conecta directamente a esos servicios.
 
 ## Carpetas
 
@@ -24,25 +24,24 @@ En producción, Nginx sirve el frontend compilado y reenvía `/api/*` a NestJS (
 - `docker-compose.yml`: PostgreSQL, MinIO, inicialización del bucket, API NestJS y frontend Nginx en el puerto `5173`. Para desarrollo interactivo, Vite se ejecuta aparte.
 - `docs/`: único lugar de documentación para el agente: contratos operativos, arquitectura, flujos institucionales, sistema visual y diagrama de la base de datos (`docs/db-diagram/`).
 
-## Migración de rutas de Vite a NestJS
+## Módulos de la API
 
-La API temporal `frontend/src/server/apiPlugin.ts` organiza rutas en bloques; NestJS las separa por módulo. Esta tabla documenta la transición: el plugin se conserva solo como alternativa local y no debe ampliarse.
+NestJS es la única implementación de `/api/*`. Cada módulo de `backend/src/modules/` cubre un bloque del contrato:
 
-| API temporal (`frontend/src/server/queries/`) | NestJS |
+| Módulo NestJS | Responsabilidad |
 | --- | --- |
-| `auth.ts`, `registrationRequests.ts` | `backend/src/modules/auth/` (registro, login, solicitudes y sesión) |
-| `users.ts` | `backend/src/modules/users/` (listados y perfiles) |
-| `submissions.ts` y almacenamiento | `backend/src/modules/submissions/` |
-| `assignments.ts` | `backend/src/modules/admin/` |
-| `reviews.ts` | `backend/src/modules/reviews/` |
-| `stratifications.ts` | `backend/src/modules/stratification/` |
-| `qualifications.ts` | `backend/src/modules/qualification/` |
-| `annexes.ts`, generación DOCX | `backend/src/modules/annexes/` y `backend/src/common/annexes/` |
-| `adminResearch.ts` | `backend/src/modules/admin/` |
+| `auth` | Registro, login, sesión y solicitudes de registro |
+| `users` | Listados y perfiles |
+| `submissions` | Entregas, documentos y almacenamiento |
+| `admin` | Asignaciones y supervisión administrativa |
+| `reviews` | Revisión académica por etapas |
+| `stratification` | Estratificación CEISH y Anexo 27 |
+| `qualification` | Anexo 12, correcciones y ciclos |
+| `annexes` | Emisión y descarga de documentos; generación DOCX en `backend/src/common/annexes/` |
 
 ## Datos y seguridad
 
-Los contratos `/api/*` y los nombres que esperan `frontend/src/services/` se mantienen estables durante la migración. NestJS obtiene los datos con Prisma sobre las tablas existentes. Los cambios de esquema se escriben primero como nueva migración SQL y se reflejan en `database/schema.sql`; no se reescribe una migración ya aplicada.
+Los contratos `/api/*` y los nombres que esperan `frontend/src/services/` se mantienen estables. NestJS obtiene los datos con Prisma sobre las tablas existentes. Los cambios de esquema se escriben primero como nueva migración SQL y se reflejan en `database/schema.sql`; no se reescribe una migración ya aplicada.
 
 La autenticación usa contraseña scrypt y cookie firmada HttpOnly. Los guards cargan el rol vigente de PostgreSQL y aplican permisos de ruta; los servicios comprueban además pertenencia a una asignación antes de servir datos o documentos. `CORS_ORIGIN`, `DATABASE_URL`, `SESSION_SECRET` y las credenciales MinIO se configuran desde el entorno, nunca desde variables `VITE_*` públicas.
 

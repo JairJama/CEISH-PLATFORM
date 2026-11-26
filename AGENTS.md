@@ -9,10 +9,10 @@
 ## Arquitectura (verificada)
 
 - Monorepo sin scripts en raíz: cada `npm` se ejecuta dentro de `frontend/` o `backend/`.
-- `frontend/` = React 19 + TS + Vite + React Router + Zustand. `backend/` = NestJS (API de referencia) + Prisma + MinIO SDK.
+- `frontend/` = React 19 + TS + Vite + React Router + Zustand. `backend/` = NestJS (única API) + Prisma + MinIO SDK.
 - Contrato: navegador → `/api/*` (cookies) → NestJS → PostgreSQL (metadatos) + MinIO (bucket `documents`). El navegador nunca toca PostgreSQL/MinIO; los componentes solo usan `frontend/src/services/`.
-- `frontend/vite.config.ts`: con `VITE_USE_NEST_BACKEND=true` hace proxy `/api` a `BACKEND_URL` (por defecto `http://localhost:3000`). Con `false` carga el plugin transitorio `frontend/src/server/apiPlugin.ts`: no agregarle capacidades.
-- `CLAUDE.md` está desactualizado (describe un backend dentro de Vite sin NestJS): ignorarlo. La fuente vigente es `README.md`, este archivo y `docs/`.
+- `frontend/vite.config.ts`: proxy fijo de `/api` a `BACKEND_URL` (por defecto `http://localhost:3000`). No existe API dentro de Vite; no agregar código de servidor al frontend.
+- La fuente vigente es `README.md`, este archivo y `docs/`.
 - Backend: Swagger en `http://localhost:3000/api/docs`. Sesión en cookie firmada `HttpOnly`/`SameSite=Lax` (`Secure` en prod); cada request protegida revalida usuario y rol.
 - Módulos NestJS en `backend/src/modules/`: `auth users submissions stratification qualification reviews annexes admin`. Esquema Prisma en `backend/prisma/schema.prisma`.
 
@@ -22,7 +22,7 @@ Toda la documentación de contexto está en `docs/`; no crear otras carpetas de 
 
 | Archivo | Propósito |
 | --- | --- |
-| `docs/arquitectura.md` | Límites del monorepo, módulos y transición de la API Vite a NestJS |
+| `docs/arquitectura.md` | Límites del monorepo, módulos y contrato `/api` |
 | `docs/guia_integracion_y_ejecucion.md` | Contrato `/api`, entorno local y comprobaciones previas |
 | `docs/matriz-seguridad-auth.md` | Casos manuales de sesión, roles y pertenencia |
 | `docs/sistema-visual.md` | Tokens, componentes y accesibilidad de la UI |
@@ -39,7 +39,7 @@ docker compose down        # conserva volúmenes; -v los borra y re-ejecuta seed
 npm ci && npx prisma generate
 npm run start:dev
 npm test                   # solo specs de auth (jest.auth.config.js); e2e: npm run test:e2e
-# Frontend (desde frontend/): abre :5173 con VITE_USE_NEST_BACKEND=true
+# Frontend (desde frontend/): abre :5173 (Vite proxea /api a NestJS)
 npm ci
 npm run dev
 ```

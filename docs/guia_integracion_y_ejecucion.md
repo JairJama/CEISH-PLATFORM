@@ -6,7 +6,7 @@ La estructura y los límites entre `frontend/`, `backend/`, `database/` y Compos
 
 ## Contrato del frontend
 
-Las funciones de `frontend/src/services/` consumen rutas `/api/*` del backend NestJS. En local, `frontend/vite.config.ts` reenvía esas solicitudes al valor de `BACKEND_URL`. Si `VITE_USE_NEST_BACKEND=true`, Vite no carga el plugin de API temporal. La cookie de sesión se conserva en solicitudes del mismo origen.
+Las funciones de `frontend/src/services/` consumen rutas `/api/*` del backend NestJS. En local, `frontend/vite.config.ts` reenvía esas solicitudes al valor de `BACKEND_URL`. La cookie de sesión se conserva en solicitudes del mismo origen.
 
 Las principales rutas de dominio son:
 
