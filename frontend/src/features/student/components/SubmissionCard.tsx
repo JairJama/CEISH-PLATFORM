@@ -1,5 +1,4 @@
-import type { StudentSubmission } from '../../../shared/types/platform.types';
-import { getResearchType } from '../researchTypes';
+import type { ResearchType, StudentSubmission } from '../../../shared/types/platform.types';
 
 interface Props {
   submission: StudentSubmission;
@@ -25,6 +24,10 @@ function documentKind(document: StudentSubmission['documents'][number]) {
   if (document.mimeType.includes('spreadsheet') || /\.xlsx?$/.test(name)) return 'XLS';
   return 'DOC';
 }
+
+const RESEARCH_TYPE_LABEL: Record<ResearchType, string> = {
+  general: 'Investigación general',
+};
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente de revisión', cls: 'badge--warning' },
@@ -74,7 +77,7 @@ export function SubmissionCard({ submission, onView, onEdit, onDelete, onSubmitC
         </div>
         <div className="submission-card__info">
           <span className="submission-card__code">{submission.researchCode}</span>
-          <span className="submission-card__type">{getResearchType().name}</span>
+          <span className="submission-card__type">{RESEARCH_TYPE_LABEL[submission.researchType]}</span>
           <p className="submission-card__filename">{submission.title}</p>
           <p className="submission-card__date">Enviado el {formatDateTime(submission.submittedAt)}</p>
         </div>
