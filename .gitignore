@@ -29,3 +29,6 @@ dist-ssr
 # Agents
 .agents
 skills-lock.json
+
+CLAUDE.md
+AGENTS.md
