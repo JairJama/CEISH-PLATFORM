@@ -2,23 +2,22 @@
 
 > Propósito: convenciones vigentes de UI y accesibilidad para cambios visuales en `frontend/`.
 
-La interfaz prioriza lectura de expedientes, decisiones trazables y acciones claras. Las vistas de investigador, evaluador y administrador comparten los mismos tokens y patrones; el rol cambia las acciones disponibles, no el lenguaje visual. El tema vigente es oscuro y se define en `frontend/src/index.css`.
+La interfaz prioriza lectura de expedientes, decisiones trazables y acciones claras. Las vistas de investigador, evaluador y administrador comparten los mismos tokens y patrones; el rol cambia las acciones disponibles, no el lenguaje visual. El tema vigente es claro con acento institucional rojo y se construye con Tailwind CSS v4 desde `frontend/src/index.css`.
 
 ## Fundamentos
 
 | Uso | Token o criterio |
 | --- | --- |
-| Acción principal / navegación activa | `--c-primary` (`#ef3e3a`), hover `--c-primary-hover` (`#d92f2c`) |
-| Fondo de trabajo | `--c-bg` (`#0a0c0e`) |
-| Tarjeta o formulario | `--c-surface` (`#111419`); superficies suaves `--c-surface-2` (`#171b20`) |
-| Texto principal / secundario | `--c-text` / `--c-text-2` |
-| Texto auxiliar | `--c-text-muted`; no usar como texto normal de bajo contraste |
-| Éxito, alerta y error | `--c-success-*`, badges warning, `--c-danger-*` |
-| Ritmo de espaciado | `--space-1` a `--space-8`: 4, 8, 12, 16, 24 y 32 px |
-| Bordes | `--r-sm` a `--r-xl`; controles compactos y tarjetas con radio consistente |
+| Acción principal / color secundario de marca | `--color-brand` (`#ef3e3a`), hover `--color-brand-hover` (`#d92f2c`) |
+| Fondo de trabajo | `#f8fafc` (`bg-slate-50`) |
+| Tarjeta o formulario | `#ffffff` (`bg-white`); superficies suaves `#f1f5f9` / `#f8fafc` (`bg-slate-100` / `bg-slate-50`) |
+| Texto principal / secundario | `#0f172a` (`text-slate-900`) / `#334155` (`text-slate-700`) |
+| Texto auxiliar | `#64748b` (`text-slate-500`); no usar texto de bajo contraste para contenido legible |
+| Éxito, alerta y error | Utilidades semánticas Tailwind `emerald-*`, `amber-*` y `red-*` |
+| Espaciado y bordes | Escala estándar de Tailwind (`gap-*`, `p-*`, `rounded-*`, `border-slate-200`) |
 | Tipografía | Inter si está disponible; sistema del dispositivo como alternativa |
 
-Usa `frontend/src/index.css` para tokens globales y `frontend/src/shared/components/common/colors.ts` para valores utilizados por componentes React. Evita introducir colores hexadecimales nuevos en una vista cuando exista un token semántico equivalente.
+Usa `frontend/src/index.css` para el tema Tailwind (`@theme`) y `frontend/src/shared/components/common/ui.ts` para clases compartidas de páginas, modales, botones y badges. Evita crear hojas CSS tradicionales por feature; utiliza utilidades Tailwind directamente en los componentes.
 
 ## Jerarquía y componentes
 

@@ -1,4 +1,5 @@
 import { DocxViewer } from '../../features/evaluation/components/DocxViewer';
+import { btnClass, modalLayout } from './common/ui';
 
 interface Props {
   url: string;
@@ -11,25 +12,30 @@ export function DocumentModal({ url, name, onClose }: Props) {
   const isWord = name.toLowerCase().endsWith('.doc') || name.toLowerCase().endsWith('.docx');
 
   return (
-    <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ zIndex: 1000, padding: '40px' }}>
-      <div className="modal" style={{ width: '100%', height: '100%', maxWidth: '1200px', display: 'flex', flexDirection: 'column', background: '#fff' }}>
-        <div className="modal__header" style={{ background: '#12161b', color: '#fff', borderBottom: '1px solid #282e36' }}>
-          <h2 className="modal__title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</h2>
-          <button className="modal__close" onClick={onClose} aria-label="Cerrar" type="button">
+    <div
+      className="fixed inset-0 z-[1000] bg-slate-900/50 backdrop-blur-[2px] flex items-center justify-center p-4 sm:p-10"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full h-full max-w-[1200px] flex flex-col overflow-hidden">
+        <div className={modalLayout.header}>
+          <h2 className="text-[16px] font-semibold text-slate-900 truncate">{name}</h2>
+          <button className={modalLayout.close} onClick={onClose} aria-label="Cerrar" type="button">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
         </div>
-        <div className="modal__body" style={{ flex: 1, padding: 0, overflow: 'hidden', background: '#e5e7eb' }}>
+        <div className="flex-1 p-0 overflow-hidden bg-slate-200">
           {isPdf ? (
-            <iframe src={url} style={{ width: '100%', height: '100%', border: 'none' }} title={name} />
+            <iframe src={url} className="w-full h-full border-0" title={name} />
           ) : isWord ? (
             <DocxViewer url={url} />
           ) : (
-            <div style={{ padding: '20px', textAlign: 'center', color: '#1f2937' }}>
+            <div className="p-6 text-center text-slate-800">
               <p>El formato del documento no puede ser previsualizado.</p>
-              <a href={url} download={name} className="eval-btn eval-btn--primary" style={{ marginTop: '10px', display: 'inline-block', textDecoration: 'none' }}>Descargar archivo</a>
+              <a href={url} download={name} className={btnClass('primary', 'mt-3 no-underline')}>
+                Descargar archivo
+              </a>
             </div>
           )}
         </div>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { colors, typography, borderRadius, spacing } from './colors';
+import React from 'react';
+import { cn } from '../../../utils/cn';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -11,83 +11,24 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 /**
  * Componente Input reutilizable
- * Campo de texto con validación visual, etiqueta y mensajes de error/ayuda
+ * Campo de texto claro con validación visual, etiqueta y mensajes de error/ayuda.
  */
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  (
-    {
-      label,
-      error,
-      helperText,
-      icon,
-      required,
-      type = 'text',
-      onFocus,
-      onBlur,
-      ...props
-    },
-    ref
-  ) => {
-    const [isFocused, setIsFocused] = useState(false);
-
-    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(true);
-      onFocus?.(e);
-    };
-
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(false);
-      onBlur?.(e);
-    };
-
+  ({ label, error, helperText, icon, required, type = 'text', className, ...props }, ref) => {
     const hasError = !!error;
-    let borderColor = colors.border;
-
-    if (hasError) {
-      borderColor = colors.state.error;
-    } else if (isFocused) {
-      borderColor = colors.primary[500];
-    }
 
     return (
-      <div style={{ width: '100%' }}>
+      <div className="w-full">
         {label && (
-          <label
-            style={{
-              display: 'block',
-              marginBottom: spacing.sm,
-              fontSize: typography.fontSize.sm,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.surface.dark,
-              fontFamily: typography.fontFamily.body,
-            }}
-          >
+          <label className="block mb-1.5 text-[12px] font-semibold text-slate-700">
             {label}
-            {required && (
-              <span style={{ color: colors.state.error, marginLeft: '0.25rem' }}>
-                *
-              </span>
-            )}
+            {required && <span className="text-[#ef3e3a] ml-1">*</span>}
           </label>
         )}
 
-        <div
-          style={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
+        <div className="relative flex items-center">
           {icon && (
-            <span
-              style={{
-                position: 'absolute',
-                left: spacing.md,
-                display: 'flex',
-                alignItems: 'center',
-                color: colors.gray[400],
-              }}
-            >
+            <span className="absolute left-3.5 flex items-center text-slate-400 pointer-events-none">
               {icon}
             </span>
           )}
@@ -95,23 +36,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             type={type}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            style={{
-              width: '100%',
-              padding: icon ? `0.75rem 1rem 0.75rem 2.5rem` : '0.75rem 1rem',
-              fontSize: typography.fontSize.base,
-              fontFamily: typography.fontFamily.body,
-              border: `1.5px solid ${borderColor}`,
-              borderRadius: borderRadius.lg,
-              backgroundColor: colors.surface.light,
-              color: colors.surface.dark,
-              transition: 'all 0.2s ease',
-              outline: 'none',
-              boxShadow: isFocused
-                ? `0 0 0 3px ${colors.primary[50]}`
-                : 'none',
-            }}
+            className={cn(
+              'w-full py-2.5 text-[14px] rounded-[7px] bg-white text-slate-900 border-[1.5px] transition-all duration-150 outline-none placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-500',
+              icon ? 'pl-10 pr-4' : 'px-3.5',
+              hasError
+                ? 'border-red-600 focus:ring-3 focus:ring-red-600/15'
+                : 'border-slate-300 focus:border-[#ef3e3a] focus:ring-3 focus:ring-[#ef3e3a]/15',
+              className,
+            )}
             aria-invalid={hasError}
             aria-describedby={hasError ? `${props.name}-error` : undefined}
             {...props}
@@ -119,36 +51,17 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         </div>
 
         {error && (
-          <p
-            id={`${props.name}-error`}
-            style={{
-              marginTop: spacing.sm,
-              fontSize: typography.fontSize.sm,
-              color: colors.state.error,
-              fontFamily: typography.fontFamily.body,
-              margin: 0,
-            }}
-          >
+          <p id={`${props.name}-error`} className="mt-1.5 text-[12px] text-red-600">
             {error}
           </p>
         )}
 
         {helperText && !error && (
-          <p
-            style={{
-              marginTop: spacing.sm,
-              fontSize: typography.fontSize.sm,
-              color: colors.gray[500],
-              fontFamily: typography.fontFamily.body,
-              margin: 0,
-            }}
-          >
-            {helperText}
-          </p>
+          <p className="mt-1.5 text-[12px] text-slate-500">{helperText}</p>
         )}
       </div>
     );
-  }
+  },
 );
 
 Input.displayName = 'Input';
