@@ -153,7 +153,7 @@ export function UploadModal({
             disabled={!canConfirm}
             type="button"
           >
-            {mode === 'edit' ? 'Guardar cambios' : 'Subir investigación'}
+            {mode === 'edit' ? 'Guardar cambios' : 'Continuar al cuestionario'}
           </button>
         </div>
       </div>

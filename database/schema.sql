@@ -69,6 +69,7 @@ CREATE TABLE submissions (
   research_code VARCHAR(11) NOT NULL UNIQUE,
   research_type VARCHAR(30) NOT NULL DEFAULT 'general'
                   CHECK (research_type IN ('general', 'scientific', 'clinical', 'social')),
+  questionnaire JSONB NOT NULL DEFAULT '{}'::jsonb,  -- respuestas del cuestionario del investigador
   title         TEXT NOT NULL,
   document_name VARCHAR(255) NOT NULL,           -- nombre original del archivo
   document_path TEXT,                            -- clave del objeto en MinIO (bucket "documents")

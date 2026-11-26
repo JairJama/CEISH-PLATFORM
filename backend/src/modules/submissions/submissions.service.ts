@@ -6,16 +6,67 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { randomInt } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
+import {
+  isConflictedMember,
+  questionnaireConflictMembers,
+  type QuestionnaireAnswers,
+} from "../../common/questionnaire/conflicts";
 
 const RESEARCH_TYPES = ["general", "scientific", "clinical", "social"] as const;
 type ResearchType = (typeof RESEARCH_TYPES)[number];
+
+const REQUIRED_QUESTIONNAIRE_IDS = [
+  "q1",
+  ...Array.from({ length: 68 }, (_, index) => `q${index + 3}`),
+];
+
+function isFilledAnswer(value: unknown): boolean {
+  if (typeof value === "string") return value.trim().length > 0;
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every((item) => typeof item === "string")
+  );
+}
+
+function validateQuestionnaire(
+  value: unknown,
+): asserts value is QuestionnaireAnswers {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new BadRequestException(
+      "El cuestionario de la investigación es requerido",
+    );
+  }
+  const answers = value as Record<string, unknown>;
+  const missing = REQUIRED_QUESTIONNAIRE_IDS.filter(
+    (id) => !isFilledAnswer(answers[id]),
+  );
+  if (missing.length > 0) {
+    throw new BadRequestException(
+      `El cuestionario está incompleto: faltan ${missing.length} respuesta(s) obligatoria(s)`,
+    );
+  }
+  for (const [id, answer] of Object.entries(answers)) {
+    if (
+      typeof answer !== "string" &&
+      !(
+        Array.isArray(answer) &&
+        answer.every((item) => typeof item === "string")
+      )
+    ) {
+      throw new BadRequestException(`Respuesta inválida en la pregunta ${id}`);
+    }
+  }
+}
 
 export interface CreateSubmissionDto {
   studentId: string;
   researchType: ResearchType;
   title: string;
   comment?: string;
+  questionnaire: QuestionnaireAnswers;
   documents: Array<{
     documentName: string;
     documentPath: string;
@@ -167,6 +218,7 @@ export class SubmissionsService {
         "Debes adjuntar al menos un documento para crear la investigación",
       );
     }
+    validateQuestionnaire(input.questionnaire);
     const primaryDocument = input.documents[0];
     if (!primaryDocument) {
       throw new BadRequestException("Se requiere al menos un documento");
@@ -186,6 +238,7 @@ export class SubmissionsService {
                 studentId: input.studentId,
                 researchCode,
                 researchType: input.researchType,
+                questionnaire: input.questionnaire as Prisma.InputJsonValue,
                 title: input.title.trim(),
                 documentName: primaryDocument.documentName,
                 documentPath: primaryDocument.documentPath,
@@ -273,22 +326,36 @@ export class SubmissionsService {
             return { id: m.id, activeCount };
           });
 
-          const minLoad = Math.min(...loads.map((l) => l.activeCount));
-          const candidates = loads.filter((l) => l.activeCount === minLoad);
-          const selected = candidates[randomInt(candidates.length)];
-
-          await tx.stratificationAssignment.create({
-            data: {
-              submissionId: createdSubmission.id,
-              stratifierId: selected.id,
-              roundNumber: 1,
-            },
+          const conflictMembers = questionnaireConflictMembers(
+            input.questionnaire,
+          );
+          const eligibleLoads = loads.filter((load) => {
+            const member = members.find((item) => item.id === load.id);
+            return member && !isConflictedMember(member.name, conflictMembers);
           });
 
-          await tx.submission.update({
-            where: { id: createdSubmission.id },
-            data: { classificationStatus: "awaiting-first" },
-          });
+          if (eligibleLoads.length > 0) {
+            const minLoad = Math.min(
+              ...eligibleLoads.map((l) => l.activeCount),
+            );
+            const candidates = eligibleLoads.filter(
+              (l) => l.activeCount === minLoad,
+            );
+            const selected = candidates[randomInt(candidates.length)];
+
+            await tx.stratificationAssignment.create({
+              data: {
+                submissionId: createdSubmission.id,
+                stratifierId: selected.id,
+                roundNumber: 1,
+              },
+            });
+
+            await tx.submission.update({
+              where: { id: createdSubmission.id },
+              data: { classificationStatus: "awaiting-first" },
+            });
+          }
         }
 
         return createdSubmission.id;

@@ -16,6 +16,7 @@ import type {
 } from '../types/platform.types';
 import type { Criterion, CriterionStatus } from '../../features/evaluation/types/evaluation.types';
 import { apiRequest } from '../../services/http';
+import type { QuestionnaireAnswers } from '../questionnaire';
 
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
 
@@ -229,9 +230,10 @@ export const platformService = {
       mimeType: string;
       sizeBytes: number;
     }>,
+    questionnaire: QuestionnaireAnswers,
   ): Promise<StudentSubmission> {
     const data = await apiSend<SubmissionDTO>('POST', '/api/submissions', {
-      studentId, researchType, title, comment, documents,
+      studentId, researchType, title, comment, documents, questionnaire,
     });
     return mapSubmission(data);
   },

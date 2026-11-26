@@ -5,7 +5,9 @@ import type { StudentSubmission } from '../../shared/types/platform.types';
 import { SubmissionCard } from './components/SubmissionCard';
 import { UploadModal } from './components/UploadModal';
 import { CorrectionUploadModal } from './components/CorrectionUploadModal';
+import { QuestionnaireModal } from './components/QuestionnaireModal';
 import { workflowService } from '../../services/workflowService';
+import type { QuestionnaireAnswers } from '../../shared/questionnaire';
 import './student.css';
 
 type ModalMode = 'create' | 'edit' | null;
@@ -19,6 +21,8 @@ export function SubmissionPage() {
   const [editingSubmission, setEditingSubmission] = useState<StudentSubmission | null>(null);
   const [correctionSubmission, setCorrectionSubmission] = useState<StudentSubmission | null>(null);
   const [activeTab, setActiveTab] = useState<ResearchTab>('create');
+  const [pendingUpload, setPendingUpload] = useState<{ files: File[]; title: string; comment: string } | null>(null);
+  const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
 
   const reloadSubmissions = async () => {
     setSubmissions(await submissionsService.getAllForStudent());
@@ -32,12 +36,14 @@ export function SubmissionPage() {
   }, [currentUser.id]);
 
   const handleConfirm = async (files: File[], title: string, comment: string) => {
+    if (modalMode === 'create') {
+      setPendingUpload({ files, title, comment });
+      setModalMode(null);
+      setQuestionnaireOpen(true);
+      return;
+    }
     try {
-      if (modalMode === 'create') {
-        const sub = await submissionsService.createWithDocuments(currentUser.id, 'general', title, files, comment);
-        setSubmissions((current) => [sub, ...current]);
-        setActiveTab('active');
-      } else if (modalMode === 'edit' && editingSubmission) {
+      if (modalMode === 'edit' && editingSubmission) {
         const sub = await submissionsService.updateWithDocuments(editingSubmission.id, title, files, comment);
         setSubmissions((current) => current.map((item) => item.id === sub.id ? sub : item));
       }
@@ -46,6 +52,22 @@ export function SubmissionPage() {
     } catch (e) {
       window.alert(`No se pudo enviar la investigación: ${(e as Error).message}`);
     }
+  };
+
+  const handleQuestionnaireSubmit = async (questionnaire: QuestionnaireAnswers) => {
+    if (!pendingUpload) return;
+    const sub = await submissionsService.createWithDocuments(
+      currentUser.id,
+      'general',
+      pendingUpload.title,
+      pendingUpload.files,
+      pendingUpload.comment,
+      questionnaire,
+    );
+    setSubmissions((current) => [sub, ...current]);
+    setPendingUpload(null);
+    setQuestionnaireOpen(false);
+    setActiveTab('active');
   };
 
   const handleView = async (documentId: string) => {
@@ -154,6 +176,12 @@ export function SubmissionPage() {
           initialComment={editingSubmission?.comment}
           onConfirm={handleConfirm}
           onCancel={() => setModalMode(null)}
+        />
+      )}
+      {questionnaireOpen && (
+        <QuestionnaireModal
+          onCancel={() => { setQuestionnaireOpen(false); setPendingUpload(null); }}
+          onSubmit={handleQuestionnaireSubmit}
         />
       )}
       {correctionSubmission && (

@@ -7,6 +7,7 @@
 import { storageService } from './storage';
 import { platformService } from '../shared/services/platformService';
 import type { ResearchType, StudentSubmission } from '../shared/types/platform.types';
+import type { QuestionnaireAnswers } from '../shared/questionnaire';
 
 export const submissionsService = {
   /** Entrega del estudiante (o null). */
@@ -26,6 +27,7 @@ export const submissionsService = {
     title: string,
     files: File[],
     comment: string,
+    questionnaire: QuestionnaireAnswers,
   ): Promise<StudentSubmission> {
     const uploaded = await Promise.all(files.map((file) => storageService.uploadDocument(file)));
     const documents = uploaded.map((document) => ({
@@ -34,7 +36,7 @@ export const submissionsService = {
       mimeType: document.mimeType,
       sizeBytes: document.size,
     }));
-    return platformService.createSubmission(studentId, researchType, title, comment, documents);
+    return platformService.createSubmission(studentId, researchType, title, comment, documents, questionnaire);
   },
 
   /** Reemplaza el conjunto documental de una investigación aún no revisada. */

@@ -95,7 +95,7 @@ const ROLE_NAV = { student: STUDENT_NAV, evaluator: EVALUATOR_NAV, admin: ADMIN_
 const ROLE_LABEL = { student: 'Investigador', evaluator: 'Estratificador CEISH', admin: 'Administrador' };
 
 export function AppShell() {
-  const { currentUser, logout } = useAuthStore();
+  const { currentUser, isRestored, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -105,6 +105,7 @@ export function AppShell() {
     navigate('/login', { replace: true });
   };
 
+  if (!isRestored) return null;
   if (!currentUser) {
     return <Navigate to="/login" replace />;
   }

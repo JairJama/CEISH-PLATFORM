@@ -111,6 +111,7 @@ export interface AdminResearchItem {
   submitted_at: string;
   researcher_name: string;
   researcher_email: string;
+  questionnaire: Record<string, string | string[]> | null;
   classification_status: string;
   risk_level: RiskLevel | null;
   stratifier_id: string | null;

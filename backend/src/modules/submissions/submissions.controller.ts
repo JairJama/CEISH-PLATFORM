@@ -23,6 +23,7 @@ class CreateSubmissionBodyDto {
   researchType!: "general" | "scientific" | "clinical" | "social";
   title!: string;
   comment?: string;
+  questionnaire!: Record<string, string | string[]>;
   documents!: Array<{
     documentName: string;
     documentPath: string;
@@ -73,11 +74,12 @@ export class SubmissionsController {
     if (
       !body.researchType ||
       !body.title ||
+      !body.questionnaire ||
       !body.documents ||
       !body.documents.length
     ) {
       throw new BadRequestException(
-        "El tipo, título y documentos de la investigación son requeridos",
+        "El tipo, título, cuestionario y documentos de la investigación son requeridos",
       );
     }
     return this.submissionsService.createSubmission({
@@ -85,6 +87,7 @@ export class SubmissionsController {
       researchType: body.researchType,
       title: body.title,
       comment: body.comment,
+      questionnaire: body.questionnaire,
       documents: body.documents,
     });
   }

@@ -4,6 +4,7 @@ import { platformService } from '../../../shared/services/platformService';
 import type { User } from '../../../shared/types/platform.types';
 import { workflowService, type AdminResearchItem } from '../../../services/workflowService';
 import { ResearchRow } from './ResearchManagementPanel';
+import { QuestionnaireReview } from './QuestionnaireReview';
 import '../admin.css';
 
 export function ResearchDetailPage() {
@@ -35,6 +36,6 @@ export function ResearchDetailPage() {
 
   return <div className="page page-transition">
     <div className="page__header research-detail-header"><Link className="research-detail-back" to="/admin/investigaciones">← Volver a investigaciones</Link><div><p className="research-detail-kicker">EXPEDIENTE DE INVESTIGACIÓN</p><h1 className="page__title">{research.document_name}</h1><p className="page__subtitle">{research.researcher_name} · {research.researcher_email}</p></div></div>
-    <div className="page__body"><div className="research-detail-process"><div className="research-detail-process__track"><span className="is-done">01<strong>Estratificación</strong></span><i /><span className={research.classification_status === 'classified' ? 'is-done' : 'is-current'}>02<strong>Evaluación ética</strong></span><i /><span className={research.qualification_status === 'approved' ? 'is-done' : ''}>03<strong>Dictamen final</strong></span></div></div><ResearchRow research={research} members={members} onChanged={reload} /></div>
+    <div className="page__body"><div className="research-detail-process"><div className="research-detail-process__track"><span className="is-done">01<strong>Estratificación</strong></span><i /><span className={research.classification_status === 'classified' ? 'is-done' : 'is-current'}>02<strong>Evaluación ética</strong></span><i /><span className={research.qualification_status === 'approved' ? 'is-done' : ''}>03<strong>Dictamen final</strong></span></div></div><ResearchRow research={research} members={members} onChanged={reload} /><QuestionnaireReview answers={research.questionnaire} /></div>
   </div>;
 }

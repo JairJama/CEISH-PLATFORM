@@ -5,6 +5,11 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma/prisma.service";
+import {
+  isConflictedMember,
+  questionnaireConflictMembers,
+  type QuestionnaireAnswers,
+} from "../../common/questionnaire/conflicts";
 
 const CEISH_INTERNAL_ROLES = [
   "teacher",
@@ -70,6 +75,7 @@ export class AdminService {
         submitted_at: s.submittedAt,
         researcher_name: s.student.name,
         researcher_email: s.student.email,
+        questionnaire: s.questionnaire,
         classification_status: s.classificationStatus,
         risk_level: s.riskLevel,
         stratifier_id: firstStrat?.stratifierId ?? null,
@@ -110,6 +116,17 @@ export class AdminService {
       throw new BadRequestException(
         "El usuario seleccionado no es miembro CEISH",
       );
+    const questionnaire =
+      (assignment.submission.questionnaire as QuestionnaireAnswers) ?? {};
+    if (
+      isConflictedMember(
+        member.name,
+        questionnaireConflictMembers(questionnaire),
+      )
+    )
+      throw new BadRequestException(
+        "El miembro seleccionado fue declarado con conflicto de interés por el investigador",
+      );
 
     await this.prisma.stratificationAssignment.update({
       where: { id: assignment.id },
@@ -125,6 +142,7 @@ export class AdminService {
   async reassignQualifier(submissionId: string, nextQualifierId: string) {
     const qualCase = await this.prisma.qualificationCase.findUnique({
       where: { submissionId },
+      include: { submission: true },
     });
     if (!qualCase)
       throw new NotFoundException("Caso de evaluación no encontrado");
@@ -143,6 +161,17 @@ export class AdminService {
     if (!member)
       throw new BadRequestException(
         "El usuario seleccionado no es miembro CEISH interno",
+      );
+    const questionnaire =
+      (qualCase.submission.questionnaire as QuestionnaireAnswers) ?? {};
+    if (
+      isConflictedMember(
+        member.name,
+        questionnaireConflictMembers(questionnaire),
+      )
+    )
+      throw new BadRequestException(
+        "El miembro seleccionado fue declarado con conflicto de interés por el investigador",
       );
 
     await this.prisma.qualificationCase.update({

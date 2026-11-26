@@ -381,3 +381,29 @@
 .research-management-card__locked { font-size: 12px; color: var(--c-text-muted); }
 .research-management-card__actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 2px; }
 .research-management-card__message { font-size: 12px; color: var(--c-text-muted); }
+
+/* ---- Questionnaire review ---- */
+.research-questionnaire {
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  background: var(--c-surface);
+}
+.research-questionnaire__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+.research-questionnaire__header p { margin-bottom: 4px; color: var(--c-danger); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.research-questionnaire__header h2 { color: var(--c-text); font-size: 17px; }
+.research-questionnaire__header > span { padding: 5px 9px; border-radius: 99px; background: var(--c-surface-2); color: var(--c-text-muted); font-size: 11px; font-weight: 700; }
+.research-questionnaire__empty { color: var(--c-text-muted); font-size: 13px; }
+.research-questionnaire__list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.research-questionnaire__list li { padding: 12px 14px; border: 1px solid var(--c-border); border-radius: var(--r-md); background: var(--c-surface-2); }
+.research-questionnaire__question { display: flex; align-items: flex-start; gap: 9px; }
+.research-questionnaire__question > span { display: grid; width: 24px; height: 24px; flex: 0 0 auto; place-items: center; border-radius: 6px; background: var(--c-surface); color: var(--c-danger); font-size: 10px; font-weight: 800; }
+.research-questionnaire__question strong { color: var(--c-text-2); font-size: 12px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.research-questionnaire__answer { margin: 8px 0 0 33px; color: var(--c-text); font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 640px) {
+  .research-questionnaire { padding: 14px; }
+  .research-questionnaire__header { flex-direction: column; }
+  .research-questionnaire__answer { margin-left: 0; }
+}
